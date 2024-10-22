@@ -1,6 +1,6 @@
 # syntax=docker.io/docker/dockerfile:1.7-labs
 
-FROM node:latest
+FROM node:alpine
 
 RUN corepack enable
 
