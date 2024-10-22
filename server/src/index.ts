@@ -1,7 +1,4 @@
 import fastify from "fastify";
-import { Hello } from "pushme-models";
-
-var hello: Hello = { a: "b" };
 
 fastify()
   .route({
@@ -10,9 +7,7 @@ fastify()
     handler: (_, reply) => reply.send("Hello, world!"),
   })
   .listen({
-    host: process.env.SERVER_HOST,
-    port: process.env.SERVER_PORT
-      ? parseInt(process.env.SERVER_PORT)
-      : undefined,
+    host: process.env.SERVER_HOST || "0.0.0.0",
+    port: process.env.SERVER_PORT ? parseInt(process.env.SERVER_PORT) : 8080,
   })
   .then((addr) => console.log(`Listening at ${addr}`));
