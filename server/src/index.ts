@@ -1,14 +1,14 @@
 import fastify from "fastify";
+import { SERVER_HOST, SERVER_PORT } from "./config";
+import "./data-source";
 
-const app = fastify({ logger: { level: "debug" } });
-
-app
+fastify({ logger: { level: "debug" } })
   .route({
     url: "/",
     method: "get",
     handler: (_, reply) => reply.send("Hello, world!"),
   })
   .listen({
-    host: process.env.SERVER_HOST || "0.0.0.0",
-    port: process.env.SERVER_PORT ? parseInt(process.env.SERVER_PORT) : 8080,
+    host: SERVER_HOST,
+    port: SERVER_PORT,
   });
