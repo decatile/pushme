@@ -1,6 +1,8 @@
 import fastify from "fastify";
 
-fastify()
+const app = fastify({ logger: { level: "debug" } });
+
+app
   .route({
     url: "/",
     method: "get",
@@ -9,5 +11,4 @@ fastify()
   .listen({
     host: process.env.SERVER_HOST || "0.0.0.0",
     port: process.env.SERVER_PORT ? parseInt(process.env.SERVER_PORT) : 8080,
-  })
-  .then((addr) => console.log(`Listening at ${addr}`));
+  });

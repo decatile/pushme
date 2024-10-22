@@ -2,16 +2,18 @@
 
 FROM node:alpine
 
-RUN corepack enable
+RUN corepack enable && adduser -DH app app
 
 WORKDIR /app
 
-COPY --exclude=./client . .
+COPY --chown=app:app --exclude=client . .
 
 RUN pnpm install
 
 WORKDIR /app/server
 
 RUN pnpm build
+
+USER app
 
 CMD [ "node", "out/index.js" ]
