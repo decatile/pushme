@@ -1,4 +1,7 @@
 import fastify from "fastify";
+import { Hello } from "pushme-models";
+
+var hello: Hello = { a: "b" };
 
 fastify()
   .route({

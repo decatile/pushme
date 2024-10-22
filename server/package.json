@@ -1,10 +1,13 @@
 {
+  "name": "server",
+  "private": true,
   "scripts": {
     "build": "tsc"
   },
   "dependencies": {
     "fastify": "^5.0.0",
-    "typeorm": "^0.3.20"
+    "typeorm": "^0.3.20",
+    "pushme-models": "workspace:*"
   },
   "devDependencies": {
     "@eslint/js": "^9.13.0",
