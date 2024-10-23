@@ -7,6 +7,8 @@ services:
       dockerfile: server.Dockerfile
     ports:
       - 8080:8080
+    env_file:
+      - .env
     environment:
       POSTGRES_DATABASE: pushme
       POSTGRES_USERNAME: postgres
@@ -15,9 +17,15 @@ services:
       POSTGRES_PORT: 5432
       SERVER_HOST: 0.0.0.0
       SERVER_PORT: 8080
+      REDIS_URL: redis://default:default@redis:6379/0
 
   postgres:
     image: postgres
     environment:
       POSTGRES_DB: pushme
       POSTGRES_PASSWORD: postgres
+
+  redis:
+    image: redis
+    environment:
+      REDIS_PASSWORD: default

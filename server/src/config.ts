@@ -8,6 +8,8 @@ export const {
   POSTGRES_PORT,
   SERVER_HOST,
   SERVER_PORT,
+  TELEGRAM_TOKEN,
+  REDIS_URL
 } = z
   .object({
     POSTGRES_DATABASE: z.string(),
@@ -17,5 +19,7 @@ export const {
     POSTGRES_PORT: z.coerce.number().int(),
     SERVER_HOST: z.string(),
     SERVER_PORT: z.coerce.number().int(),
+    TELEGRAM_TOKEN: z.string(),
+    REDIS_URL: z.string()
   })
   .parse(process.env);

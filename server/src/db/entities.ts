@@ -1,22 +1,12 @@
-import "reflect-metadata";
 import {
-  BaseEntity,
-  Column,
-  CreateDateColumn,
-  DataSource,
   Entity,
-  ManyToOne,
-  OneToMany,
   PrimaryGeneratedColumn,
+  Column,
+  OneToMany,
+  CreateDateColumn,
   UpdateDateColumn,
+  ManyToOne,
 } from "typeorm";
-import {
-  POSTGRES_HOST,
-  POSTGRES_PORT,
-  POSTGRES_DATABASE,
-  POSTGRES_PASSWORD,
-  POSTGRES_USERNAME,
-} from "./config";
 
 @Entity()
 export class User {
@@ -66,14 +56,3 @@ export class Notification {
     this.contentBody = body;
   }
 }
-
-export default new DataSource({
-  type: "postgres",
-  host: POSTGRES_HOST,
-  port: POSTGRES_PORT,
-  username: POSTGRES_USERNAME,
-  password: POSTGRES_PASSWORD,
-  database: POSTGRES_DATABASE,
-  entities: [User, Notification],
-  synchronize: true,
-});
