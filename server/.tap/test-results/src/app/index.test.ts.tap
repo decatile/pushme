@@ -1,0 +1,14 @@
+TAP version 14
+# Subtest: noop
+    1..0
+ok 1 - noop # time=6.039ms
+
+# Subtest: /auth/accept-code
+    ok 1 - should be equal
+    ok 2 - Success case, tested token content
+    ok 3 - should be equal
+    ok 4 - Case when invalid code passed
+    1..4
+ok 2 - /auth/accept-code # time=65.986ms
+
+1..2

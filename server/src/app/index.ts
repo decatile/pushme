@@ -1,10 +1,7 @@
 import fastify, { FastifyBaseLogger, FastifyInstance } from "fastify";
 import fastifyJwt from "@fastify/jwt";
-import { TelegramService } from "./telegram";
-
-export type Services = Partial<{
-  "/auth/accept-code": { telegram: TelegramService };
-}>;
+import { TelegramService } from "./telegram/index";
+import { UsersService } from "./users/index";
 
 function makeUse(services: Services, log: FastifyBaseLogger) {
   return <Path extends keyof Services>(
@@ -19,12 +16,25 @@ function makeUse(services: Services, log: FastifyBaseLogger) {
   };
 }
 
-export function createApp(services: Services): FastifyInstance {
-  let app = fastify({ logger: { level: "debug" } }).register(fastifyJwt, {
-    secret: "DO NOT USE IN PRODUCTION",
-  });
+export type Services = Partial<{
+  "/auth/accept-code": { telegram: TelegramService; users: UsersService };
+}>;
+
+export type Options = { logLevel: string; secret: string };
+
+export function createApp(
+  services: Services,
+  options: Options
+): FastifyInstance {
+  let app = fastify({ logger: { level: options.logLevel } }).register(
+    fastifyJwt,
+    {
+      secret: options.secret,
+      sign: { expiresIn: "30m" },
+    }
+  );
   const use = makeUse(services, app.log);
-  use("/auth/accept-code", ({ telegram, url }) => {
+  use("/auth/accept-code", ({ telegram, users, url }) => {
     app.route({
       url,
       method: "get",
@@ -41,10 +51,22 @@ export function createApp(services: Services): FastifyInstance {
         },
       },
       handler: async (request, reply) => {
-        const telegramID = await telegram.acceptCode(
-          (request.query as { code: string }).code
-        );
-        reply.send("Your telegram ID: " + telegramID);
+        let telegramID: number;
+        try {
+          telegramID = await telegram.acceptCode((request.query as any).code);
+        } catch {
+          await reply.send({
+            statusCode: 400,
+            error: "Bad Request",
+            message: "Invalid telegram code",
+          });
+          return;
+        }
+        const user = await users.getOrCreateUserByTelegram(telegramID);
+        await reply.send({
+          ok: 1,
+          token: app.jwt.sign({ user_id: user.id }),
+        });
       },
     });
   });

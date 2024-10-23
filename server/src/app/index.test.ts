@@ -1,0 +1,79 @@
+import tap from "tap";
+import { createApp } from ".";
+import { TelegramService } from "./telegram/index";
+import { UsersService } from "./users/index";
+import { User } from "../db/entities";
+
+tap.test("noop", (t) => {
+  createApp({}, { logLevel: "warn", secret: "secret" });
+  t.end();
+});
+
+tap.test("/auth/accept-code", async (t) => {
+  {
+    const app = createApp(
+      {
+        "/auth/accept-code": {
+          telegram: {
+            acceptCode() {
+              return Promise.resolve(1);
+            },
+          },
+          users: {
+            getOrCreateUserByTelegram(telegramId) {
+              const user = new User(telegramId);
+              user.id = 1;
+              return Promise.resolve(user);
+            },
+          },
+        },
+      },
+      { logLevel: "warn", secret: "secret" }
+    );
+    await app.ready();
+    const resp = (
+      await app.inject({
+        path: "/auth/accept-code",
+        query: { code: "543hjk" },
+      })
+    ).json();
+    t.equal((app.jwt.decode(resp.token) as any).user_id, 1);
+    t.pass();
+  }
+  {
+    const app = createApp(
+      {
+        "/auth/accept-code": {
+          telegram: {
+            acceptCode(code) {
+              throw Error();
+            },
+          },
+          users: {
+            getOrCreateUserByTelegram(telegramId) {
+              throw Error();
+            },
+          },
+        },
+      },
+      { logLevel: "warn", secret: "secret" }
+    );
+    await app.ready();
+    const resp = (
+      await app.inject({
+        path: "/auth/accept-code",
+        query: { code: "543hjk" },
+      })
+    ).json();
+    t.equal(
+      JSON.stringify(resp),
+      JSON.stringify({
+        statusCode: 400,
+        error: "Bad Request",
+        message: "Invalid telegram code",
+      })
+    );
+    t.pass();
+  }
+  t.end();
+});

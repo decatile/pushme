@@ -1,20 +1,12 @@
 import TelegramBot from "node-telegram-bot-api";
-import { TELEGRAM_TOKEN } from "../config";
+import { TELEGRAM_TOKEN } from "../../config";
 import { RedisClientType } from "redis";
 import { uuidv7 } from "uuidv7";
-
-export interface TelegramService {
-  /**
-   * @param code - code that telegram bot sent to user
-   * @throws {Error} if code invalid
-   * @returns User telegram ID
-   */
-  acceptCode(code: string): Promise<string>;
-}
+import { TelegramService } from ".";
 
 const replyMarkup = { keyboard: [[{ text: "Send me code" }]] };
 
-export function connectToTelegram(redis: RedisClientType): TelegramService {
+export function createTelegramService(redis: RedisClientType): TelegramService {
   const bot = new TelegramBot(TELEGRAM_TOKEN, { polling: true });
   bot.onText(/\/start/, async (msg) => {
     await bot.sendMessage(
@@ -67,7 +59,7 @@ export function connectToTelegram(redis: RedisClientType): TelegramService {
       if (!telegramID) {
         throw Error("Invalid code");
       }
-      return telegramID;
+      return +telegramID;
     },
   };
 }

@@ -8,6 +8,7 @@ export const {
   POSTGRES_PORT,
   SERVER_HOST,
   SERVER_PORT,
+  SERVER_JWT_SECRET,
   TELEGRAM_TOKEN,
   REDIS_URL
 } = z
@@ -19,6 +20,7 @@ export const {
     POSTGRES_PORT: z.coerce.number().int(),
     SERVER_HOST: z.string(),
     SERVER_PORT: z.coerce.number().int(),
+    SERVER_JWT_SECRET: z.string(),
     TELEGRAM_TOKEN: z.string(),
     REDIS_URL: z.string()
   })
