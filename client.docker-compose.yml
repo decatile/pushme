@@ -1,0 +1,38 @@
+services:
+  #development profile
+  web-dev:
+    build:
+      context: .
+      dockerfile: client-dev.Dockerfile
+    ports:
+      - 5173:5173
+    profiles:
+      - dev
+    environment:
+      API_URL: http://localhost:8080
+    volumes:
+      - ./client:/app/client
+      - /app/client/node_modules
+    develop:
+      # we specify the files to watch for changes
+      watch:
+        # it'll watch for changes in package.json and package-lock.json and rebuild the container if there are any changes
+        - path: ./client/package.json
+          action: rebuild
+        - path: ./client/pnpm-lock.yaml
+          action: rebuild
+        # it'll watch for changes in the frontend directory and sync the changes with the container real time
+        - path: ./client
+          target: /app
+          action: sync
+  #production profile
+  web-prod:
+    build:
+      context: .
+      dockerfile: client-prod.Dockerfile
+    ports:
+      - 80:80
+    profiles:
+      - prod
+    environment:
+      API_URL: http://localhost:8080
