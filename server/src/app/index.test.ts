@@ -1,7 +1,5 @@
 import tap from "tap";
 import { createApp, Options } from ".";
-import { TelegramService } from "./telegram/index";
-import { UsersService } from "./users/index";
 import { User } from "../db/entities";
 
 const testingOptions = { logLevel: "warn", secret: "secret" } satisfies Options;
