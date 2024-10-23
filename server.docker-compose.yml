@@ -1,21 +1,23 @@
 services:
   server:
+    depends_on:
+      - postgres
     build:
       context: .
       dockerfile: server.Dockerfile
     ports:
       - 8080:8080
     environment:
-      MONGODB_DATABASE: pushme
-      MONGODB_USERNAME: root
-      MONGODB_PASSWORD: root
-      MONGODB_HOST: mongodb
-      MONGODB_PORT: 27017
+      POSTGRES_DATABASE: pushme
+      POSTGRES_USERNAME: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
       SERVER_HOST: 0.0.0.0
       SERVER_PORT: 8080
 
-  mongodb:
-    image: mongo
+  postgres:
+    image: postgres
     environment:
-      MONGO_INITDB_ROOT_USERNAME: root
-      MONGO_INITDB_ROOT_PASSWORD: root
+      POSTGRES_DB: pushme
+      POSTGRES_PASSWORD: postgres
