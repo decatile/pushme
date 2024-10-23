@@ -59,18 +59,18 @@ tap.test("/auth/accept-code", async (t) => {
       testingOptions
     );
     await app.ready();
-    const resp = (
-      await app.inject({
-        path: "/auth/accept-code",
-        query: { code: "" },
-      })
-    ).json();
+    const resp = await app.inject({
+      path: "/auth/accept-code",
+      query: { code: "" },
+    });
     t.equal(
-      JSON.stringify(resp),
+      JSON.stringify({ code: resp.statusCode, resp: resp.json() }),
       JSON.stringify({
-        statusCode: 400,
-        error: "Bad Request",
-        message: "Invalid telegram code",
+        code: 400,
+        resp: {
+          error: "Bad Request",
+          message: "Invalid telegram code",
+        },
       })
     );
     t.pass();
