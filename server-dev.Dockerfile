@@ -1,12 +1,12 @@
 # syntax=docker.io/docker/dockerfile:1.7-labs
 
-FROM node:alpine
+FROM node:alpine AS builder
 
-RUN corepack enable && adduser -DH app app
+RUN corepack enable pnpm && adduser -DH app app
 
 WORKDIR /app
 
-COPY --chown=app:app --exclude=client . .
+COPY --exclude=client --chown=app:app . .
 
 RUN pnpm install
 
