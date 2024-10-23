@@ -55,8 +55,8 @@ export function createApp(
         try {
           telegramID = await telegram.acceptCode((request.query as any).code);
         } catch {
+          reply.code(400);
           await reply.send({
-            statusCode: 400,
             error: "Bad Request",
             message: "Invalid telegram code",
           });
@@ -64,7 +64,6 @@ export function createApp(
         }
         const user = await users.getOrCreateUserByTelegram(telegramID);
         await reply.send({
-          ok: 1,
           token: app.jwt.sign({ user_id: user.id }),
         });
       },

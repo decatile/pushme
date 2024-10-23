@@ -1,11 +1,13 @@
 import tap from "tap";
-import { createApp } from ".";
+import { createApp, Options } from ".";
 import { TelegramService } from "./telegram/index";
 import { UsersService } from "./users/index";
 import { User } from "../db/entities";
 
+const testingOptions = { logLevel: "warn", secret: "secret" } satisfies Options;
+
 tap.test("noop", (t) => {
-  createApp({}, { logLevel: "warn", secret: "secret" });
+  createApp({}, testingOptions);
   t.end();
 });
 
@@ -28,13 +30,13 @@ tap.test("/auth/accept-code", async (t) => {
           },
         },
       },
-      { logLevel: "warn", secret: "secret" }
+      testingOptions
     );
     await app.ready();
     const resp = (
       await app.inject({
         path: "/auth/accept-code",
-        query: { code: "543hjk" },
+        query: { code: "" },
       })
     ).json();
     t.equal((app.jwt.decode(resp.token) as any).user_id, 1);
@@ -56,13 +58,13 @@ tap.test("/auth/accept-code", async (t) => {
           },
         },
       },
-      { logLevel: "warn", secret: "secret" }
+      testingOptions
     );
     await app.ready();
     const resp = (
       await app.inject({
         path: "/auth/accept-code",
-        query: { code: "543hjk" },
+        query: { code: "" },
       })
     ).json();
     t.equal(
