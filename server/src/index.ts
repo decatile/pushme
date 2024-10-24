@@ -18,6 +18,7 @@ import { createUsersService } from "./app/users/impl";
   const usersService = createUsersService(dataSource);
   await createApp(
     {
+      "/up": {},
       "/auth/accept-code": {
         telegram: telegramService,
         users: usersService,

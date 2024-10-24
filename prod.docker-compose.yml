@@ -4,9 +4,11 @@ services:
       context: .
       dockerfile: client-prod.Dockerfile
     ports:
-      - 80:80
+      - 8080:80
     environment:
       API_URL: /api
+    depends_on:
+      - server
 
   server:
     depends_on:
