@@ -77,5 +77,5 @@ tap.test("/auth/accept-code", async (t) => {
       })
     );
   }
-  t.end();
+  t.end()
 });

@@ -18,7 +18,7 @@ import { createUsersService } from "./app/users/impl";
     logLevel: "debug",
     secret: SERVER_JWT_SECRET,
   });
-  withRoutes(app, {
+  withRoutes<true>(app, {
     "/up": {},
     "/auth/accept-code": {
       telegram: createTelegramService(redis as RedisClientType, app.log),
