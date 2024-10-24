@@ -17,6 +17,7 @@ function makeUse(services: Services, log: FastifyBaseLogger) {
 }
 
 export type Services = Partial<{
+  "/up": {};
   "/auth/accept-code": { telegram: TelegramService; users: UsersService };
 }>;
 
@@ -33,24 +34,26 @@ export function createApp(
       sign: { expiresIn: "30m" },
     }
   );
+  app.get("/up", async (_, reply) => reply.send());
   const use = makeUse(services, app.log);
   use("/auth/accept-code", ({ telegram, users, url }) => {
-    app.route({
+    app.get(
       url,
-      method: "get",
-      schema: {
-        querystring: {
-          type: "object",
-          required: ["code"],
-          additionalProperties: false,
-          properties: {
-            code: {
-              type: "string",
+      {
+        schema: {
+          querystring: {
+            type: "object",
+            required: ["code"],
+            additionalProperties: false,
+            properties: {
+              code: {
+                type: "string",
+              },
             },
           },
         },
       },
-      handler: async (request, reply) => {
+      async (request, reply) => {
         let telegramID: number;
         try {
           telegramID = await telegram.acceptCode((request.query as any).code);
@@ -66,8 +69,8 @@ export function createApp(
         await reply.send({
           token: app.jwt.sign({ user_id: user.id }),
         });
-      },
-    });
+      }
+    );
   });
   return app;
 }

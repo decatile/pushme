@@ -9,6 +9,13 @@ tap.test("noop", (t) => {
   t.end();
 });
 
+tap.test("/up", async (t) => {
+  const app = createApp({ "/up": {} }, testingOptions);
+  const resp = await app.inject({ path: "/up" });
+  t.equal(resp.statusCode, 200);
+  t.end();
+});
+
 tap.test("/auth/accept-code", async (t) => {
   {
     const app = createApp(
@@ -73,7 +80,6 @@ tap.test("/auth/accept-code", async (t) => {
         },
       })
     );
-    t.pass();
   }
   t.end();
 });

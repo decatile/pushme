@@ -1,36 +1,20 @@
 services:
-  server-dev:
-    depends_on:
-      - postgres
-      - redis
+  client:
     build:
       context: .
-      dockerfile: server-dev.Dockerfile
+      dockerfile: client-prod.Dockerfile
     ports:
-      - 8080:8080
-    env_file:
-      - .env
+      - 80:80
     environment:
-      POSTGRES_DATABASE: pushme
-      POSTGRES_USERNAME: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_HOST: postgres
-      POSTGRES_PORT: 5432
-      SERVER_HOST: 0.0.0.0
-      SERVER_PORT: 8080
-      REDIS_URL: redis://default:default@redis:6379/0
-    profiles:
-      - dev
-  
-  server-prod:
+      API_URL: /api
+
+  server:
     depends_on:
       - postgres
       - redis
     build:
       context: .
       dockerfile: server-prod.Dockerfile
-    ports:
-      - 8080:8080
     env_file:
       - .env
     environment:
@@ -42,8 +26,6 @@ services:
       SERVER_HOST: 0.0.0.0
       SERVER_PORT: 8080
       REDIS_URL: redis://default:default@redis:6379/0
-    profiles:
-      - prod
 
   postgres:
     image: postgres
