@@ -36,7 +36,9 @@ export function withRoutes<IsFull = false>(
     ? Services extends Partial<infer ClearServices>
       ? ClearServices
       : never
-    : Services
+    : IsFull extends false
+    ? Services
+    : never
 ) {
   const use = makeUse(services, app.log);
   use("/up", ({ url }) => app.get(url, (_, reply) => reply.send()));
