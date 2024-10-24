@@ -14,19 +14,19 @@ export class User {
   id: number;
 
   @Column()
-  telegram_id: number;
+  telegramId: number;
 
   @OneToMany(() => Notification, (photo) => photo.user)
   notifications: Notification[];
 
   @CreateDateColumn()
-  created_at: Date;
+  createdAt: Date;
 
   @UpdateDateColumn()
-  updated_at: Date;
+  updatedAt: Date;
 
-  constructor(telegram_id: number) {
-    this.telegram_id = telegram_id;
+  constructor(telegramId: number) {
+    this.telegramId = telegramId;
   }
 }
 
