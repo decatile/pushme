@@ -45,7 +45,6 @@ tap.test("/auth/accept-code", async (t) => {
       })
     ).json();
     t.equal((app.jwt.decode(resp.token) as any).user_id, 1);
-    t.pass();
   }
   {
     const app = createApp(

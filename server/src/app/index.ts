@@ -34,8 +34,8 @@ export function createApp(
       sign: { expiresIn: "30m" },
     }
   );
-  app.get("/up", async (_, reply) => reply.send());
   const use = makeUse(services, app.log);
+  use("/up", ({ url }) => app.get(url, (_, reply) => reply.send()));
   use("/auth/accept-code", ({ telegram, users, url }) => {
     app.get(
       url,
