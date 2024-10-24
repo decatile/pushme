@@ -23,17 +23,17 @@ export type Services = Partial<{
 
 export type Options = { logLevel: string; secret: string };
 
-export function createApp(
-  services: Services,
-  options: Options
-): FastifyInstance {
-  let app = fastify({ logger: { level: options.logLevel } }).register(
-    fastifyJwt,
-    {
-      secret: options.secret,
-      sign: { expiresIn: "30m" },
-    }
-  );
+export function createApp(options: Options): FastifyInstance {
+  return fastify({ logger: { level: options.logLevel } }).register(fastifyJwt, {
+    secret: options.secret,
+    sign: { expiresIn: "30m" },
+  });
+}
+
+export function withRoutes(
+  app: FastifyInstance,
+  services: Services
+) {
   const use = makeUse(services, app.log);
   use("/up", ({ url }) => app.get(url, (_, reply) => reply.send()));
   use("/auth/accept-code", ({ telegram, users, url }) => {
@@ -72,5 +72,4 @@ export function createApp(
       }
     );
   });
-  return app;
 }
