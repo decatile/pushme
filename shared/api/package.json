@@ -1,0 +1,7 @@
+{
+  "name": "@pushme/api",
+  "main": ".",
+  "dependencies": {
+    "fastify": "^5.0.0"
+  }
+}

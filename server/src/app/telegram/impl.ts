@@ -5,7 +5,7 @@ import { uuidv7 } from "uuidv7";
 import { TelegramService } from ".";
 import { FastifyBaseLogger } from "fastify";
 
-const replyMarkup = { keyboard: [[{ text: "Send me code" }]] };
+const reply_markup = { keyboard: [[{ text: "Send me code" }]] };
 
 function makeWrap(
   log: FastifyBaseLogger
@@ -35,7 +35,7 @@ export function createTelegramService(
       await bot.sendMessage(
         msg.chat.id,
         "Hello! To retrieve code use keyboard below.",
-        { reply_markup: replyMarkup }
+        { reply_markup }
       );
     })
   );
@@ -51,7 +51,7 @@ export function createTelegramService(
           "Your code:\n```" + codePair[0] + "```\nIt is valid for 5 minutes",
           {
             reply_to_message_id: msg.message_id,
-            reply_markup: replyMarkup,
+            reply_markup,
             parse_mode: "Markdown",
           }
         );
@@ -68,7 +68,7 @@ export function createTelegramService(
         "Your code:\n```" + code + "```\nIt is valid for 5 minutes",
         {
           reply_to_message_id: msg.message_id,
-          reply_markup: replyMarkup,
+          reply_markup,
           parse_mode: "Markdown",
         }
       );

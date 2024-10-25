@@ -5,7 +5,7 @@ import {
   SERVER_PORT,
 } from "./config";
 import { createClient, RedisClientType } from "redis";
-import { createApp, withRoutes } from "./app";
+import { createApp, appWithRoutes } from "./app";
 import dataSource from "./db";
 import { createTelegramService } from "./app/telegram/impl";
 import { createUsersService } from "./app/users/impl";
@@ -18,7 +18,7 @@ import { createUsersService } from "./app/users/impl";
     logLevel: "debug",
     secret: SERVER_JWT_SECRET,
   });
-  withRoutes<true>(app, {
+  appWithRoutes<true>(app, {
     "/up": {},
     "/auth/accept-code": {
       telegram: createTelegramService(redis as RedisClientType, app.log),

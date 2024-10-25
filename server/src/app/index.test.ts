@@ -1,81 +1,85 @@
 import tap from "tap";
-import { createApp, Options, withRoutes } from ".";
+import { createApp, appWithRoutes, Services } from ".";
 import { User } from "../db/entities";
+import { requests } from "@pushme/api";
+import { FastifyInstance, InjectOptions } from "fastify";
+import { TelegramService } from "./telegram";
+import { UsersService } from "./users";
+import sinon from "sinon";
 
-const testingOptions = { logLevel: "warn", secret: "secret" } satisfies Options;
+const telegramService: TelegramService = {
+  acceptCode() {
+    throw Error();
+  },
+};
 
-tap.test("noop", async (t) => {
-  await createApp(testingOptions).ready();
+const usersService: UsersService = {
+  getOrCreateUserByTelegram() {
+    throw Error();
+  },
+};
+
+function createDefaultApp(services?: Services) {
+  const app = createApp({ logLevel: "warn", secret: "secret" });
+  if (services) appWithRoutes(app, services);
+  return app;
+}
+
+async function request(app: FastifyInstance, options: InjectOptions) {
+  await app.ready();
+  return await app.inject(options);
+}
+
+tap.afterEach(() => sinon.restore());
+
+tap.test("noop succeeds", async (t) => {
+  createDefaultApp();
   t.end();
 });
 
-tap.test("/up", async (t) => {
-  const app = createApp(testingOptions);
-  withRoutes(app, { "/up": {} });
-  const resp = await app.inject({ path: "/up" });
+tap.test("/up succeeds", async (t) => {
+  const app = createDefaultApp({ "/up": {} });
+  const resp = await request(app, requests.up());
   t.equal(resp.statusCode, 200);
+  t.equal(resp.body, "");
   t.end();
 });
 
-tap.test("/auth/accept-code", async (t) => {
-  {
-    const app = createApp(testingOptions);
-    withRoutes(app, {
-      "/auth/accept-code": {
-        telegram: {
-          acceptCode() {
-            return Promise.resolve(1);
-          },
-        },
-        users: {
-          getOrCreateUserByTelegram(telegramId) {
-            const user = new User(telegramId);
-            user.id = 1;
-            return Promise.resolve(user);
-          },
-        },
-      },
-    });
-    await app.ready();
-    const resp = (
-      await app.inject({
-        path: "/auth/accept-code",
-        query: { code: "" },
-      })
-    ).json();
-    t.equal((app.jwt.decode(resp.token) as any).user_id, 1);
-  }
-  {
-    const app = createApp(testingOptions);
-    withRoutes(app, {
-      "/auth/accept-code": {
-        telegram: {
-          acceptCode(code) {
-            throw Error();
-          },
-        },
-        users: {
-          getOrCreateUserByTelegram(telegramId) {
-            throw Error();
-          },
-        },
-      },
-    });
-    await app.ready();
-    const resp = await app.inject({
-      path: "/auth/accept-code",
-      query: { code: "" },
-    });
-    t.equal(
-      JSON.stringify({ code: resp.statusCode, resp: resp.json() }),
-      JSON.stringify({
-        code: 400,
-        resp: {
-          error: "Bad Request",
-          message: "Invalid telegram code",
-        },
-      })
-    );
-  }
-  t.end()
+tap.test("/auth/accept-code returns valid token", async (t) => {
+  sinon.replace(telegramService, "acceptCode", async () => 1);
+  sinon.replace(usersService, "getOrCreateUserByTelegram", async () => ({
+    ...new User(1),
+    id: 1,
+  }));
+  const app = createDefaultApp({
+    "/auth/accept-code": {
+      telegram: telegramService,
+      users: usersService,
+    },
+  });
+  const resp = await request(app, requests.auth.acceptCode(""));
+  const tokenCookie = resp.headers["set-cookie"] as string;
+  const token = app.jwt.decode<any>(/token=(.*)/.exec(tokenCookie)?.[1]!);
+  t.hasOwnPropsOnly(token, ["uid", "iat", "exp"]);
+  t.equal(resp.body, "");
+  t.end();
+});
+
+tap.test("/auth/accept-code handle code not found", async (t) => {
+  sinon.replace(telegramService, "acceptCode", () => {
+    throw Error();
+  });
+  const app = createDefaultApp({
+    "/auth/accept-code": {
+      telegram: telegramService,
+      users: usersService,
+    },
+  });
+  const resp = await request(app, requests.auth.acceptCode(""));
+  t.equal(resp.statusCode, 400);
+  t.equal(
+    JSON.stringify(resp.json()),
+    JSON.stringify({ error: "invalid-telegram-code" })
+  );
+  t.end();
 });

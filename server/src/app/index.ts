@@ -2,6 +2,7 @@ import fastify, { FastifyBaseLogger, FastifyInstance } from "fastify";
 import fastifyJwt from "@fastify/jwt";
 import { TelegramService } from "./telegram/index";
 import { UsersService } from "./users/index";
+import fastifyCookie from "@fastify/cookie";
 
 function makeUse(services: Services, log: FastifyBaseLogger) {
   return <Path extends keyof Services>(
@@ -24,13 +25,19 @@ export type Services = Partial<{
 export type Options = { logLevel: string; secret: string };
 
 export function createApp(options: Options): FastifyInstance {
-  return fastify({ logger: { level: options.logLevel } }).register(fastifyJwt, {
-    secret: options.secret,
-    sign: { expiresIn: "30m" },
-  });
+  return fastify({ logger: { level: options.logLevel } })
+    .register(fastifyCookie)
+    .register(fastifyJwt, {
+      secret: options.secret,
+      sign: { expiresIn: "30m" },
+      cookie: { cookieName: "token", signed: true },
+    })
+    .setErrorHandler(({ statusCode, message }, _, reply) => {
+      reply.code(statusCode!).send({ error: message });
+    });
 }
 
-export function withRoutes<IsFull = false>(
+export function appWithRoutes<IsFull = false>(
   app: FastifyInstance,
   services: IsFull extends true
     ? Services extends Partial<infer ClearServices>
@@ -64,17 +71,11 @@ export function withRoutes<IsFull = false>(
         try {
           telegramID = await telegram.acceptCode((request.query as any).code);
         } catch {
-          reply.code(400);
-          await reply.send({
-            error: "Bad Request",
-            message: "Invalid telegram code",
-          });
-          return;
+          throw { statusCode: 400, message: "invalid-telegram-code" };
         }
         const user = await users.getOrCreateUserByTelegram(telegramID);
-        await reply.send({
-          token: app.jwt.sign({ user_id: user.id }),
-        });
+        const token = await reply.jwtSign({ uid: user.id });
+        await reply.setCookie("token", token).send();
       }
     );
   });
