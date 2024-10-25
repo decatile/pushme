@@ -38,8 +38,7 @@ tap.test("noop succeeds", async (t) => {
 });
 
 tap.test("/up succeeds", async (t) => {
-  const app = createDefaultApp({ "/up": {} });
-  const resp = await request(app, requests.up());
+  const resp = await request(createDefaultApp({ "/up": {} }), requests.up());
   t.equal(resp.statusCode, 200);
   t.equal(resp.body, "");
   t.end();
@@ -59,7 +58,7 @@ tap.test("/auth/accept-code returns valid token", async (t) => {
   });
   const resp = await request(app, requests.auth.acceptCode(""));
   const tokenCookie = resp.headers["set-cookie"] as string;
-  const token = app.jwt.decode<any>(/token=(.*)/.exec(tokenCookie)?.[1]!);
+  const token = app.jwt.decode<any>(/token=([^;]+)/.exec(tokenCookie)![1]);
   t.hasOwnPropsOnly(token, ["uid", "iat", "exp"]);
   t.equal(resp.body, "");
   t.end();
@@ -69,13 +68,15 @@ tap.test("/auth/accept-code handle code not found", async (t) => {
   sinon.replace(telegramService, "acceptCode", () => {
     throw Error();
   });
-  const app = createDefaultApp({
-    "/auth/accept-code": {
-      telegram: telegramService,
-      users: usersService,
-    },
-  });
-  const resp = await request(app, requests.auth.acceptCode(""));
+  const resp = await request(
+    createDefaultApp({
+      "/auth/accept-code": {
+        telegram: telegramService,
+        users: usersService,
+      },
+    }),
+    requests.auth.acceptCode("")
+  );
   t.equal(resp.statusCode, 400);
   t.equal(
     JSON.stringify(resp.json()),
