@@ -3,6 +3,8 @@ import fastifyJwt from "@fastify/jwt";
 import { TelegramService } from "./telegram/index";
 import { UsersService } from "./users/index";
 import fastifyCookie from "@fastify/cookie";
+import { IS_PRODUCTION, SERVER_PORT } from "../config";
+import fastifyCors from "@fastify/cors";
 
 function makeUse(services: Services, log: FastifyBaseLogger) {
   return <Path extends keyof Services>(
@@ -25,7 +27,7 @@ export type Services = Partial<{
 export type Options = { logLevel: string; secret: string };
 
 export function createApp(options: Options): FastifyInstance {
-  return fastify({ logger: { level: options.logLevel } })
+  const app = fastify({ logger: { level: options.logLevel } })
     .register(fastifyCookie)
     .register(fastifyJwt, {
       secret: options.secret,
@@ -35,6 +37,10 @@ export function createApp(options: Options): FastifyInstance {
     .setErrorHandler(({ statusCode, message }, _, reply) => {
       reply.code(statusCode!).send({ error: message });
     });
+  if (!IS_PRODUCTION) {
+    app.register(fastifyCors, { origin: `*` });
+  }
+  return app;
 }
 
 export function appWithRoutes<IsFull = false>(
@@ -75,7 +81,13 @@ export function appWithRoutes<IsFull = false>(
         }
         const user = await users.getOrCreateUserByTelegram(telegramID);
         const token = await reply.jwtSign({ uid: user.id });
-        await reply.setCookie("token", token).send();
+        await reply
+          .cookie(
+            "token",
+            token,
+            IS_PRODUCTION ? { httpOnly: true, sameSite: true } : undefined
+          )
+          .send();
       }
     );
   });

@@ -10,7 +10,8 @@ export const {
   SERVER_PORT,
   SERVER_JWT_SECRET,
   TELEGRAM_TOKEN,
-  REDIS_URL
+  REDIS_URL,
+  IS_PRODUCTION
 } = z
   .object({
     POSTGRES_DATABASE: z.string(),
@@ -22,6 +23,7 @@ export const {
     SERVER_PORT: z.coerce.number().int(),
     SERVER_JWT_SECRET: z.string(),
     TELEGRAM_TOKEN: z.string(),
-    REDIS_URL: z.string()
+    REDIS_URL: z.string(),
+    IS_PRODUCTION: z.coerce.boolean().default(false)
   })
   .parse(process.env);
