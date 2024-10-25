@@ -2,6 +2,7 @@
   "name": "@pushme/api",
   "main": ".",
   "dependencies": {
+    "axios": "^1.7.7",
     "fastify": "^5.0.0"
   }
 }
