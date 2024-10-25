@@ -1,8 +1,8 @@
-import { requests } from "src";
-import { IAuthResponse } from "src/models/Auth";
-import { instance_api } from "src/api.conf";
-import { mapper } from "src/utils/mapper";
 import { AxiosResponse } from "axios";
+import { requests } from "..";
+import { instance_api } from "../api.conf";
+import { IAuthResponse } from "../models/Auth";
+import { mapper } from "../utils/mapper";
 
 export namespace AuthService {
   export function sendCode(

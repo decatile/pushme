@@ -1,4 +1,6 @@
 import { Button } from "@/ui/button";
+import { AuthService } from "@shared/api/src/services/auth";
+import { CheckService } from "@shared/api/src/services/check";
 import {
   Card,
   CardContent,
@@ -8,10 +10,27 @@ import {
 } from "@/ui/card";
 import { Input } from "@/ui/input";
 import { Separator } from "@/ui/separator";
+import { useState } from "react";
 
 const LoginForm = () => {
+  const [code, setCode] = useState("");
+
+  const handleLogin = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    console.log("login click");
+
+    const a = await AuthService.sendCode(code);
+    console.log("res", a);
+  };
+
+  const handleCheckStatus = async () => {
+    const a = await CheckService.checkStatus();
+    console.log("res", a);
+  };
+
   return (
     <Card className="w-[350px] mx-auto">
+      <Button onClick={handleCheckStatus}>UP</Button>
       <CardHeader className="pb-4">
         <CardTitle className="text-center text-2xl">Вход</CardTitle>
         <CardDescription className="text-center">
@@ -19,10 +38,14 @@ const LoginForm = () => {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form>
+        <form onSubmit={handleLogin}>
           <div className="grid w-full items-center gap-4">
             <div className="flex flex-col space-y-1.5 mb-4">
               <Input
+                onChange={(e) => {
+                  setCode(e.target.value);
+                }}
+                value={code}
                 className="border-slate-400"
                 id="code"
                 type="text"

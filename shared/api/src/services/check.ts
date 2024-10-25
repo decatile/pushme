@@ -1,7 +1,7 @@
-import { instance_api } from "src/api.conf";
-import { mapper } from "src/utils/mapper";
-import { requests } from "src";
 import { AxiosResponse } from "axios";
+import { requests } from "..";
+import { instance_api } from "../api.conf";
+import { mapper } from "../utils/mapper";
 
 export namespace CheckService {
   export function checkStatus(): Promise<AxiosResponse> {
