@@ -47,23 +47,19 @@ services:
       SERVER_HOST: 0.0.0.0
       SERVER_PORT: 8080
       REDIS_URL: redis://default:default@redis:6379/0
-    profiles:
-      - all
-      - srv
 
   postgres:
     image: postgres
-    profiles:
-      - all
-      - srv
     environment:
       POSTGRES_DB: pushme
       POSTGRES_PASSWORD: postgres
 
   redis:
     image: redis
-    profiles:
-      - all
-      - srv
     environment:
       REDIS_PASSWORD: default
+  
+  adminer:
+    image: adminer
+    ports:
+      - 8081:8080
