@@ -1,4 +1,5 @@
 import {
+  IS_PRODUCTION,
   REDIS_URL,
   SERVER_HOST,
   SERVER_JWT_SECRET,
@@ -14,9 +15,10 @@ import { createUsersService } from "./app/users/impl";
   await dataSource.initialize();
   const redis = createClient({ url: REDIS_URL });
   await redis.connect();
-  const app = createApp({
+  const app = await createApp({
     logLevel: "debug",
     secret: SERVER_JWT_SECRET,
+    isProduction: IS_PRODUCTION,
   });
   appWithRoutes<true>(app, {
     "/up": {},

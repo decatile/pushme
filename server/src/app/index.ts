@@ -3,8 +3,9 @@ import fastifyJwt from "@fastify/jwt";
 import { TelegramService } from "./telegram/index";
 import { UsersService } from "./users/index";
 import fastifyCookie from "@fastify/cookie";
-import { IS_PRODUCTION, SERVER_PORT } from "../config";
 import fastifyCors from "@fastify/cors";
+import fastifySwagger from "@fastify/swagger";
+import { fastifySwaggerUi } from "@fastify/swagger-ui";
 
 function makeUse(services: Services, log: FastifyBaseLogger) {
   return <Path extends keyof Services>(
@@ -13,7 +14,7 @@ function makeUse(services: Services, log: FastifyBaseLogger) {
   ) => {
     const deps = services[path];
     if (deps) {
-      log.debug(`Using route ${path}`);
+      log.debug(`Route ${path}`);
       func({ ...deps, url: path });
     }
   };
@@ -24,9 +25,13 @@ export type Services = Partial<{
   "/auth/accept-code": { telegram: TelegramService; users: UsersService };
 }>;
 
-export type Options = { logLevel: string; secret: string };
+export type Options = {
+  logLevel: string;
+  secret: string;
+  isProduction?: boolean;
+};
 
-export function createApp(options: Options): FastifyInstance {
+export async function createApp(options: Options): Promise<FastifyInstance> {
   const app = fastify({
     logger: {
       level: options.logLevel,
@@ -39,18 +44,36 @@ export function createApp(options: Options): FastifyInstance {
         },
       },
     },
-  })
+  });
+  await app
+    .decorate("isProduction", options.isProduction ?? false)
     .register(fastifyCookie)
     .register(fastifyJwt, {
       secret: options.secret,
       sign: { expiresIn: "30m" },
       cookie: { cookieName: "token", signed: true },
     })
-    .setErrorHandler(({ statusCode, message }, _, reply) => {
-      reply.code(statusCode!).send({ error: message });
+    .register(fastifySwagger)
+    .register(fastifySwaggerUi, { routePrefix: "/docs" });
+  if (options.isProduction) {
+    app.setErrorHandler((error, _, reply) => {
+      if (!error.statusCode) {
+        app.log.error(error);
+        return reply.code(500).send({ error: "Internal server error" });
+      }
+      reply.code(error.statusCode).send({ error: error.message });
     });
-  if (!IS_PRODUCTION) {
-    app.register(fastifyCors, { origin: `*` });
+  } else {
+    await app.register(fastifyCors, { origin: `*` });
+    app.setErrorHandler((error, _, reply) => {
+      if (!error.statusCode) {
+        app.log.error(error);
+        return reply
+          .code(500)
+          .send({ error: `Unhandled error: ${error.message}` });
+      }
+      reply.code(error.statusCode).send({ error: error.message });
+    });
   }
   return app;
 }
@@ -97,7 +120,9 @@ export function appWithRoutes<IsFull = false>(
           .cookie(
             "token",
             token,
-            IS_PRODUCTION ? { httpOnly: true, sameSite: true } : undefined
+            (app as any).isProduction
+              ? { httpOnly: true, sameSite: true }
+              : undefined
           )
           .send();
       }

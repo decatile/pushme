@@ -19,8 +19,8 @@ const usersService: UsersService = {
   },
 };
 
-function createDefaultApp(services?: Services) {
-  const app = createApp({ logLevel: "warn", secret: "secret" });
+async function createDefaultApp(services?: Services) {
+  const app = await createApp({ logLevel: "warn", secret: "secret" });
   if (services) appWithRoutes(app, services);
   return app;
 }
@@ -33,12 +33,12 @@ async function request(app: FastifyInstance, options: InjectOptions) {
 tap.afterEach(() => sinon.restore());
 
 tap.test("noop succeeds", async (t) => {
-  createDefaultApp();
+  await createDefaultApp();
   t.end();
 });
 
 tap.test("/up succeeds", async (t) => {
-  const resp = await request(createDefaultApp({ "/up": {} }), requests.up());
+  const resp = await request(await createDefaultApp({ "/up": {} }), requests.up());
   t.equal(resp.statusCode, 200);
   t.equal(resp.body, "");
   t.end();
@@ -50,7 +50,7 @@ tap.test("/auth/accept-code returns valid token", async (t) => {
     ...new User(1),
     id: 1,
   }));
-  const app = createDefaultApp({
+  const app = await createDefaultApp({
     "/auth/accept-code": {
       telegram: telegramService,
       users: usersService,
@@ -69,7 +69,7 @@ tap.test("/auth/accept-code handle code not found", async (t) => {
     throw Error();
   });
   const resp = await request(
-    createDefaultApp({
+    await createDefaultApp({
       "/auth/accept-code": {
         telegram: telegramService,
         users: usersService,
