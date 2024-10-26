@@ -27,7 +27,19 @@ export type Services = Partial<{
 export type Options = { logLevel: string; secret: string };
 
 export function createApp(options: Options): FastifyInstance {
-  const app = fastify({ logger: { level: options.logLevel } })
+  const app = fastify({
+    logger: {
+      level: options.logLevel,
+      transport: {
+        target: "pino-pretty",
+        options: {
+          colorize: true,
+          translateTime: "SYS:standard",
+          ignore: "pid,hostname",
+        },
+      },
+    },
+  })
     .register(fastifyCookie)
     .register(fastifyJwt, {
       secret: options.secret,

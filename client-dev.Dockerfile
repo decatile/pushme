@@ -2,19 +2,21 @@
 
 FROM node:20-alpine
 
-RUN corepack enable
+RUN corepack enable pnpm
 
-RUN addgroup app && adduser -S -G app app
-
-USER root
+# RUN addgroup app && adduser -S -G app app
 
 WORKDIR /app
 
-COPY --exclude=./server --chown=app:app . .
+# COPY --exclude=./server --chown=app:app . .
+
+COPY --exclude=./server . .
 
 RUN pnpm install
 
-USER app
+WORKDIR /app/client
+
+# USER app
 
 EXPOSE 5173
 
