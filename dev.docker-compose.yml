@@ -7,10 +7,8 @@ services:
       dockerfile: client-dev.Dockerfile
     ports:
       - 5173:5173
-    profiles:
-      - all
     environment:
-      API_URL: http://localhost:8080
+      VITE_SERVER_API_URL: http://localhost:8080
     volumes:
       - ./client:/app/client
       - /app/client/node_modules
@@ -26,7 +24,7 @@ services:
         - path: ./client
           target: /app
           action: sync
-          
+
   server:
     depends_on:
       - postgres
@@ -58,7 +56,7 @@ services:
     image: redis
     environment:
       REDIS_PASSWORD: default
-  
+
   adminer:
     image: adminer
     ports:
