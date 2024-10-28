@@ -104,7 +104,14 @@ export function appWithRoutes<Full extends boolean = false>(
           token: await request
             .jwtVerify()
             .then(() => "ok")
-            .catch(({ message }) => message),
+            .catch((msg) => {
+              switch (msg.code) {
+                case "FST_JWT_NO_AUTHORIZATION_IN_HEADER":
+                  return "not-present";
+                default:
+                  return "invalid";
+              }
+            }),
         });
       }
     )
