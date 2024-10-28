@@ -52,9 +52,9 @@ tap.test("/up succeeds", async (t) => {
 });
 
 tap.test("/auth/accept-code returns valid token", async (t) => {
-  sinon.replace(telegramService, "acceptCode", async () => 1);
+  sinon.replace(telegramService, "acceptCode", async () => '1');
   sinon.replace(usersService, "getOrCreateUserByTelegram", async () => ({
-    ...new User(1),
+    ...new User('1'),
     id: 1,
   }));
   const app = await createDefaultApp({

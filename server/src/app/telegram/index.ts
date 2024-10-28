@@ -4,5 +4,5 @@ export interface TelegramService {
    * @throws {Error} if code invalid
    * @returns User telegram ID
    */
-  acceptCode(code: string): Promise<number>;
+  acceptCode(code: string): Promise<string>;
 }

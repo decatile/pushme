@@ -14,19 +14,19 @@ export class User {
   id: number;
 
   @Column()
-  telegramId: number;
+  telegram_id: string;
 
   @OneToMany(() => Notification, (photo) => photo.user)
   notifications: Notification[];
 
   @CreateDateColumn()
-  createdAt: Date;
+  created_at: Date;
 
   @UpdateDateColumn()
-  updatedAt: Date;
+  updated_at: Date;
 
-  constructor(telegramId: number) {
-    this.telegramId = telegramId;
+  constructor(telegramId: string) {
+    this.telegram_id = telegramId;
   }
 }
 
@@ -39,10 +39,10 @@ export class Notification {
   user: User;
 
   @Column()
-  contentTitle: string;
+  content_title: string;
 
   @Column()
-  contentBody: string;
+  content_body: string;
 
   @CreateDateColumn()
   created_at: Date;
@@ -52,7 +52,7 @@ export class Notification {
 
   constructor(user: User, title: string, body: string) {
     this.user = user;
-    this.contentTitle = title;
-    this.contentBody = body;
+    this.content_title = title;
+    this.content_body = body;
   }
 }

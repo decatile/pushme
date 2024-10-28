@@ -86,7 +86,7 @@ export function createTelegramService(
       if (!telegramID) {
         throw Error("Invalid code");
       }
-      return +telegramID;
+      return telegramID;
     },
   };
 }

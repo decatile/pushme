@@ -137,7 +137,7 @@ export function appWithRoutes<Full extends boolean = false>(
         },
       },
       async (request, reply) => {
-        let telegramID: number;
+        let telegramID: string;
         try {
           telegramID = await telegram.acceptCode((request.query as any).code);
         } catch {
