@@ -20,7 +20,11 @@ const usersService: UsersService = {
 };
 
 async function createDefaultApp(services?: Services) {
-  const app = await createApp({ logLevel: "warn", secret: "secret" });
+  const app = await createApp({
+    logLevel: "warn",
+    jwtSecret: "secret",
+    cookieSecret: "secret",
+  });
   if (services) appWithRoutes(app, services);
   return app;
 }
@@ -38,7 +42,10 @@ tap.test("noop succeeds", async (t) => {
 });
 
 tap.test("/up succeeds", async (t) => {
-  const resp = await request(await createDefaultApp({ "/up": {} }), requests.up());
+  const resp = await request(
+    await createDefaultApp({ "/up": {} }),
+    requests.up()
+  );
   t.equal(resp.statusCode, 200);
   t.equal(resp.body, "");
   t.end();

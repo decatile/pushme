@@ -7,6 +7,12 @@ import fastifyCors from "@fastify/cors";
 import fastifySwagger from "@fastify/swagger";
 import { fastifySwaggerUi } from "@fastify/swagger-ui";
 
+declare module "fastify" {
+  interface FastifyInstance {
+    readonly isProduction: boolean;
+  }
+}
+
 function makeUse(services: Services, log: FastifyBaseLogger) {
   return <Path extends keyof Services>(
     path: Path,
@@ -27,7 +33,8 @@ export type Services = Partial<{
 
 export type Options = {
   logLevel: string;
-  secret: string;
+  jwtSecret: string;
+  cookieSecret: string;
   isProduction?: boolean;
 };
 
@@ -47,49 +54,61 @@ export async function createApp(options: Options): Promise<FastifyInstance> {
   });
   await app
     .decorate("isProduction", options.isProduction ?? false)
-    .register(fastifyCookie)
+    .register(fastifyCookie, { secret: options.cookieSecret })
     .register(fastifyJwt, {
-      secret: options.secret,
+      secret: options.jwtSecret,
       sign: { expiresIn: "30m" },
-      cookie: { cookieName: "token", signed: true },
     })
-    .register(fastifySwagger)
-    .register(fastifySwaggerUi, { routePrefix: "/docs" });
-  if (options.isProduction) {
-    app.setErrorHandler((error, _, reply) => {
-      if (!error.statusCode) {
-        app.log.error(error);
-        return reply.code(500).send({ error: "Internal server error" });
-      }
-      reply.code(error.statusCode).send({ error: error.message });
-    });
-  } else {
-    await app.register(fastifyCors, { origin: `*` });
-    app.setErrorHandler((error, _, reply) => {
-      if (!error.statusCode) {
-        app.log.error(error);
-        return reply
-          .code(500)
-          .send({ error: `Unhandled error: ${error.message}` });
-      }
-      reply.code(error.statusCode).send({ error: error.message });
-    });
-  }
+    .register(fastifySwagger, {
+      openapi: {
+        components: {
+          securitySchemes: {
+            jwt: {
+              type: "http",
+              scheme: "Bearer",
+              bearerFormat: "JWT",
+            },
+          },
+        },
+      },
+    })
+    .register(fastifySwaggerUi, { routePrefix: "/docs" })
+    .register(fastifyCors, { origin: `*` });
+  app.setErrorHandler((error, _, reply) => {
+    if (!error.statusCode) {
+      app.log.error(error);
+      return reply
+        .code(500)
+        .send({ error: `Unhandled error: ${error.message}` });
+    }
+    reply.code(error.statusCode).send({ error: error.message });
+  });
   return app;
 }
 
-export function appWithRoutes<IsFull = false>(
+export function appWithRoutes<Full extends boolean = false>(
   app: FastifyInstance,
-  services: IsFull extends true
+  services: Full extends true
     ? Services extends Partial<infer ClearServices>
       ? ClearServices
       : never
-    : IsFull extends false
-    ? Services
-    : never
+    : Services
 ) {
   const use = makeUse(services, app.log);
-  use("/up", ({ url }) => app.get(url, (_, reply) => reply.send()));
+  use("/up", ({ url }) =>
+    app.get(
+      url,
+      { schema: { security: [{ jwt: [] }] } },
+      async (request, reply) => {
+        reply.send({
+          token: await request
+            .jwtVerify()
+            .then(() => "ok")
+            .catch(({ message }) => message),
+        });
+      }
+    )
+  );
   use("/auth/accept-code", ({ telegram, users, url }) => {
     app.get(
       url,
@@ -105,6 +124,16 @@ export function appWithRoutes<IsFull = false>(
               },
             },
           },
+          response: {
+            200: {
+              type: "object",
+              properties: {
+                token: {
+                  type: "string",
+                },
+              },
+            },
+          },
         },
       },
       async (request, reply) => {
@@ -116,15 +145,7 @@ export function appWithRoutes<IsFull = false>(
         }
         const user = await users.getOrCreateUserByTelegram(telegramID);
         const token = await reply.jwtSign({ uid: user.id });
-        await reply
-          .cookie(
-            "token",
-            token,
-            (app as any).isProduction
-              ? { httpOnly: true, sameSite: true }
-              : undefined
-          )
-          .send();
+        await reply.send({ token });
       }
     );
   });

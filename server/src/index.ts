@@ -3,6 +3,7 @@ import {
   REDIS_URL,
   SERVER_HOST,
   SERVER_JWT_SECRET,
+  SERVER_COOKIE_SECRET,
   SERVER_PORT,
 } from "./config";
 import { createClient, RedisClientType } from "redis";
@@ -17,7 +18,8 @@ import { createUsersService } from "./app/users/impl";
   await redis.connect();
   const app = await createApp({
     logLevel: "debug",
-    secret: SERVER_JWT_SECRET,
+    jwtSecret: SERVER_JWT_SECRET,
+    cookieSecret: SERVER_COOKIE_SECRET,
     isProduction: IS_PRODUCTION,
   });
   appWithRoutes<true>(app, {
