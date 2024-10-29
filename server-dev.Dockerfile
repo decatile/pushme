@@ -6,11 +6,9 @@ RUN corepack enable pnpm && adduser -DH app app
 
 WORKDIR /app
 
-COPY --exclude=client --chown=app:app . .
+COPY --chown=app:app server .
 
 RUN pnpm install
-
-WORKDIR /app/server
 
 RUN pnpm build
 

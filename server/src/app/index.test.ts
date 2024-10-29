@@ -1,7 +1,6 @@
 import tap from "tap";
 import { createApp, appWithRoutes, Services } from ".";
 import { User } from "../db/entities";
-import { requests } from "@pushme/api";
 import { FastifyInstance, InjectOptions } from "fastify";
 import { TelegramService } from "./telegram";
 import { UsersService } from "./users";
@@ -34,7 +33,7 @@ tap.test("noop succeeds", async (t) => {
 
 tap.test("/up not-present", async (t) => {
   const app = await createDefaultApp({ "/up": {} });
-  const resp = await request(app, requests.up());
+  const resp = await request(app, { path: "/up" });
   t.equal(resp.statusCode, 200);
   const json = await resp.json();
   t.hasOwnPropsOnly(json, ["token"]);
@@ -44,7 +43,10 @@ tap.test("/up not-present", async (t) => {
 
 tap.test("/up invalid", async (t) => {
   const app = await createDefaultApp({ "/up": {} });
-  const resp = await request(app, requests.up().withAuth('beliberda'));
+  const resp = await request(app, {
+    path: "/up",
+    headers: { authorization: "Bearer blabla" },
+  });
   t.equal(resp.statusCode, 200);
   const json = await resp.json();
   t.hasOwnPropsOnly(json, ["token"]);
@@ -64,7 +66,9 @@ tap.test("/auth/accept-code returns valid token", async (t) => {
       users: usersService,
     },
   });
-  const resp = (await request(app, requests.auth.acceptCode(""))).json();
+  const resp = (
+    await request(app, { path: "/auth/accept-code", query: { code: "hey" } })
+  ).json();
   t.hasOwnPropsOnly(resp, ["token"]);
   const token = app.jwt.decode<any>(resp.token);
   t.hasOwnPropsOnly(token, ["uid", "iat", "exp"]);
@@ -82,7 +86,7 @@ tap.test("/auth/accept-code handle code not found", async (t) => {
         users: usersService,
       },
     }),
-    requests.auth.acceptCode("")
+    { path: "/auth/accept-code", query: { code: "not" } }
   );
   t.equal(resp.statusCode, 400);
   t.equal(

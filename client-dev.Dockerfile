@@ -10,11 +10,9 @@ WORKDIR /app
 
 # COPY --exclude=./server --chown=app:app . .
 
-COPY --exclude=./server . .
+COPY client .
 
 RUN pnpm install
-
-WORKDIR /app/client
 
 # USER app
 

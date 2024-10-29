@@ -8,7 +8,7 @@ RUN corepack enable
 
 # Настройка пользователя и рабочей директории
 RUN addgroup app && adduser -S -G app app
-USER root
+
 WORKDIR /app
 
 # Копируем файлы и устанавливаем зависимости

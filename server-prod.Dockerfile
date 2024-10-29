@@ -6,11 +6,9 @@ RUN corepack enable pnpm
 
 WORKDIR /build
 
-COPY --exclude=client . .
+COPY server .
 
 RUN pnpm install
-
-WORKDIR /build/server
 
 RUN pnpm build
 
