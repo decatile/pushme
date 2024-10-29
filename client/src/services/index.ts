@@ -1,10 +1,8 @@
-import { InjectOptions } from "fastify";
-
-export interface InjectOptionsExtensions extends InjectOptions {
+export interface InjectOptionsExtensions {
   withAuth(token: string): InjectOptionsExtensions;
 }
 
-function _(options: InjectOptions) {
+function _(options: any) {
   return {
     ...options,
     withAuth(token: string) {

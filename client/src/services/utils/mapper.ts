@@ -1,9 +1,8 @@
-import { InjectOptions } from "fastify";
-
-export function mapper(obj: InjectOptions) {
+export function mapper(obj: any) {
   return {
     method: obj.method,
     url: obj.path as string,
     params: obj.query,
+    headers: {},
   };
 }

@@ -1,6 +1,5 @@
+import { AuthService } from "@/services/services/auth";
 import { Button } from "@/ui/button";
-import { AuthService } from "@shared/api/src/services/auth";
-import { CheckService } from "@shared/api/src/services/check";
 import {
   Card,
   CardContent,
@@ -23,14 +22,8 @@ const LoginForm = () => {
     console.log("res", a);
   };
 
-  const handleCheckStatus = async () => {
-    const a = await CheckService.checkStatus();
-    console.log("res", a);
-  };
-
   return (
     <Card className="w-[350px] mx-auto">
-      <Button onClick={handleCheckStatus}>UP</Button>
       <CardHeader className="pb-4">
         <CardTitle className="text-center text-2xl">Вход</CardTitle>
         <CardDescription className="text-center">
