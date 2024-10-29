@@ -66,7 +66,7 @@ tap.test("/auth/rotate returns valid token", async (t) => {
   }));
   const app = await createDefaultApp({
     "/auth/refresh": {
-      refreshToken: refreshTokenService,
+      refreshTokenService: refreshTokenService,
     },
   });
   const resp = await request(app, {
@@ -91,9 +91,9 @@ tap.test("/auth/accept-code returns valid token", async (t) => {
   }));
   const app = await createDefaultApp({
     "/auth/accept-code": {
-      refreshToken: refreshTokenService,
-      telegram: telegramService,
-      users: usersService,
+      refreshTokenService: refreshTokenService,
+      telegramService: telegramService,
+      usersService: usersService,
     },
   });
   const resp = await request(app, {
@@ -118,9 +118,9 @@ tap.test("/auth/accept-code handle code not found", async (t) => {
   const resp = await request(
     await createDefaultApp({
       "/auth/accept-code": {
-        refreshToken: refreshTokenService,
-        telegram: telegramService,
-        users: usersService,
+        refreshTokenService: refreshTokenService,
+        telegramService: telegramService,
+        usersService: usersService,
       },
     }),
     { path: "/auth/accept-code", query: { code: "not" } }

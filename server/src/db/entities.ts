@@ -7,6 +7,10 @@ import {
   UpdateDateColumn,
   ManyToOne,
 } from "typeorm";
+import {
+  NotificationSchedule,
+  notificationScheduleTransformer,
+} from "./notification-schedule";
 
 @Entity()
 export class User {
@@ -47,16 +51,28 @@ export class Notification {
   @Column()
   contentBody: string;
 
+  @Column({
+    type: "string",
+    transformer: notificationScheduleTransformer,
+  })
+  schedule: NotificationSchedule;
+
   @CreateDateColumn()
   createdAt: Date;
 
   @UpdateDateColumn()
   updatedAt: Date;
 
-  constructor(user: User, title: string, body: string) {
+  constructor(
+    user: User,
+    title: string,
+    body: string,
+    schedule: NotificationSchedule
+  ) {
     this.user = user;
     this.contentTitle = title;
     this.contentBody = body;
+    this.schedule = schedule;
   }
 }
 

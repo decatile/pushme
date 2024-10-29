@@ -4,14 +4,16 @@ import { TelegramService } from "./telegram/index";
 import { UsersService } from "./users/index";
 import fastifyCookie from "@fastify/cookie";
 import fastifyCors from "@fastify/cors";
-import fastifySwagger from "@fastify/swagger";
-import { fastifySwaggerUi } from "@fastify/swagger-ui";
 import { RefreshTokenService } from "./refresh-token";
-import { RefreshToken } from "../db/entities";
+import { Notification, RefreshToken } from "../db/entities";
+import { NotificationService } from "./notifications";
+import { buildJsonSchemas, FastifyZod, register } from "fastify-zod";
+import * as models from "./models";
 
 declare module "fastify" {
   interface FastifyInstance {
     readonly isProduction: boolean;
+    readonly zod: FastifyZod<typeof models>;
   }
 }
 
@@ -31,12 +33,16 @@ function makeUse(services: Services, log: FastifyBaseLogger) {
 export type Services = Partial<{
   "/up": {};
   "/auth/refresh": {
-    refreshToken: RefreshTokenService;
+    refreshTokenService: RefreshTokenService;
   };
   "/auth/accept-code": {
-    refreshToken: RefreshTokenService;
-    telegram: TelegramService;
-    users: UsersService;
+    refreshTokenService: RefreshTokenService;
+    telegramService: TelegramService;
+    usersService: UsersService;
+  };
+  "/notification/new": {
+    usersService: UsersService;
+    notificationService: NotificationService;
   };
 }>;
 
@@ -61,14 +67,9 @@ export async function createApp(options: Options): Promise<FastifyInstance> {
       },
     },
   });
-  await app
-    .decorate("isProduction", options.isProduction ?? false)
-    .register(fastifyCookie, { secret: options.cookieSecret })
-    .register(fastifyJwt, {
-      secret: options.jwtSecret,
-      sign: { expiresIn: "30m" },
-    })
-    .register(fastifySwagger, {
+  await register(app, {
+    jsonSchemas: buildJsonSchemas(models),
+    swaggerOptions: {
       openapi: {
         components: {
           securitySchemes: {
@@ -80,8 +81,16 @@ export async function createApp(options: Options): Promise<FastifyInstance> {
           },
         },
       },
+    },
+    swaggerUiOptions: { routePrefix: "/docs" },
+  });
+  await app
+    .decorate("isProduction", options.isProduction ?? false)
+    .register(fastifyCookie, { secret: options.cookieSecret })
+    .register(fastifyJwt, {
+      secret: options.jwtSecret,
+      sign: { expiresIn: "30m" },
     })
-    .register(fastifySwaggerUi, { routePrefix: "/docs" })
     .register(fastifyCors, { origin: `*` });
   app.setErrorHandler((error, _, reply) => {
     if (!error.statusCode) {
@@ -105,11 +114,11 @@ export function appWithRoutes<Full extends boolean = false>(
 ) {
   const use = makeUse(services, app.log);
   use("/up", ({ url }) =>
-    app.get(
+    app.zod.get(
       url,
-      { schema: { security: [{ jwt: [] }] } },
+      { operationId: "up", security: [{ jwt: [] }] },
       async (request, reply) => {
-        reply.send({
+        await reply.send({
           token: await request
             .jwtVerify()
             .then(() => "ok")
@@ -125,8 +134,8 @@ export function appWithRoutes<Full extends boolean = false>(
       }
     )
   );
-  use("/auth/refresh", ({ refreshToken, url }) => {
-    app.get(url, async (request, reply) => {
+  use("/auth/refresh", ({ refreshTokenService, url }) => {
+    app.zod.get(url, { operationId: "authRefresh" }, async (request, reply) => {
       const cookie = request.cookies["refresh_token"];
       if (!cookie) {
         return reply.code(400).send({ error: "no-refresh-cookie" });
@@ -137,7 +146,7 @@ export function appWithRoutes<Full extends boolean = false>(
       }
       let rToken: RefreshToken;
       try {
-        rToken = await refreshToken.findByIdAndRotate(value);
+        rToken = await refreshTokenService.findByIdAndRotate(value);
       } catch (e) {
         switch (e) {
           case "not-found":
@@ -152,57 +161,72 @@ export function appWithRoutes<Full extends boolean = false>(
           httpOnly: true,
           expires: rToken!.expiresAt,
           path: "/auth/refresh",
-          signed: true
+          signed: true,
         })
         .send({ token: aToken });
     });
   });
-  use("/auth/accept-code", ({ refreshToken, telegram, users, url }) => {
-    app.get(
-      url,
-      {
-        schema: {
-          querystring: {
-            type: "object",
-            required: ["code"],
-            additionalProperties: false,
-            properties: {
-              code: {
-                type: "string",
-              },
-            },
-          },
-          response: {
-            200: {
-              type: "object",
-              properties: {
-                token: {
-                  type: "string",
-                },
-              },
-            },
-          },
+  use(
+    "/auth/accept-code",
+    ({ refreshTokenService, telegramService, usersService: users, url }) => {
+      app.zod.get(
+        url,
+        {
+          operationId: "authAcceptCode",
+          querystring: "authAcceptCodeQuery",
         },
-      },
-      async (request, reply) => {
-        let telegramID: string;
-        try {
-          telegramID = await telegram.acceptCode((request.query as any).code);
-        } catch {
-          throw { statusCode: 400, message: "invalid-telegram-code" };
+        async (request, reply) => {
+          let telegramID: string;
+          try {
+            telegramID = await telegramService.acceptCode(request.query.code);
+          } catch {
+            throw { statusCode: 400, message: "invalid-telegram-code" };
+          }
+          const user = await users.getOrCreateUserByTelegram(telegramID);
+          const rToken = await refreshTokenService.newToken(user);
+          const aToken = await reply.jwtSign({ uid: user.id });
+          await reply
+            .cookie("refresh_token", rToken.id, {
+              httpOnly: true,
+              expires: rToken.expiresAt,
+              path: "/auth/refresh",
+              signed: true,
+            })
+            .send({ token: aToken });
         }
-        const user = await users.getOrCreateUserByTelegram(telegramID);
-        const rToken = await refreshToken.newToken(user);
-        const aToken = await reply.jwtSign({ uid: user.id });
-        await reply
-          .cookie("refresh_token", rToken.id, {
-            httpOnly: true,
-            expires: rToken.expiresAt,
-            path: "/auth/refresh",
-            signed: true
-          })
-          .send({ token: aToken });
-      }
-    );
-  });
+      );
+    }
+  );
+  use(
+    "/notification/new",
+    async ({ usersService, notificationService, url }) => {
+      app.zod.post(
+        url,
+        {
+          operationId: "notificationNew",
+          body: "notificationNewBody",
+          security: [{ jwt: [] }],
+        },
+        async (request, reply) => {
+          const { uid } = (await request.jwtDecode()) as { uid: number };
+          const { title, body, schedule } = request.body.notification;
+          let notification: Notification;
+          try {
+            notification = await notificationService.newNotification(
+              await usersService.getById(uid),
+              title,
+              body,
+              schedule
+            );
+          } catch (e) {
+            switch (e) {
+              case "invalid-schedule":
+                throw { statusCode: 400, message: e };
+            }
+          }
+          await reply.send({});
+        }
+      );
+    }
+  );
 }

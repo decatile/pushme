@@ -2,6 +2,12 @@ import { User } from "../../db/entities";
 
 export interface UsersService {
   /**
+   * @param id - User ID
+   * @returns User object
+   */
+  getById(id: number): Promise<User>;
+
+  /**
    * @param telegramId - Telegram ID
    * @returns User object (created if not exist)
    */

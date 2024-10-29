@@ -12,6 +12,7 @@ import dataSource from "./db";
 import { createTelegramService } from "./app/telegram/impl";
 import { createUsersService } from "./app/users/impl";
 import { createRefreshTokenService } from "./app/refresh-token/impl";
+import { createNotificationService } from "./app/notifications/impl";
 
 (async () => {
   await dataSource.initialize();
@@ -31,13 +32,18 @@ import { createRefreshTokenService } from "./app/refresh-token/impl";
   const refreshTokenService = createRefreshTokenService(dataSource, {
     expiresIn: 1000 * 60 * 60 * 24 * 30,
   });
+  const notificationService = createNotificationService(dataSource);
   appWithRoutes<true>(app, {
     "/up": {},
-    "/auth/refresh": { refreshToken: refreshTokenService },
+    "/auth/refresh": { refreshTokenService: refreshTokenService },
     "/auth/accept-code": {
-      refreshToken: refreshTokenService,
-      telegram: telegramService,
-      users: usersService,
+      refreshTokenService,
+      telegramService,
+      usersService,
+    },
+    "/notification/new": {
+      usersService,
+      notificationService,
     },
   });
   await app.listen({ host: SERVER_HOST, port: SERVER_PORT });
