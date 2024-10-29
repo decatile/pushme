@@ -62,6 +62,7 @@ tap.test("/auth/rotate returns valid token", async (t) => {
       { ...new User("1"), id: 1 },
       new Date(Date.now() + 1000)
     ),
+    id: "hello-world",
   }));
   const app = await createDefaultApp({
     "/auth/refresh": {
@@ -99,9 +100,9 @@ tap.test("/auth/accept-code returns valid token", async (t) => {
     path: "/auth/accept-code",
     query: { code: "hey" },
   });
-  const refreshTokenCookie = resp.cookies.find(
-    (x) => x.name === "refresh_token"
-  )!.value;
+  const refreshTokenCookie = app.unsignCookie(
+    resp.cookies.find((x) => x.name === "refresh_token")!.value
+  ).value;
   t.equal(refreshTokenCookie, "hello-world");
   const body = await resp.json();
   t.hasOwnPropsOnly(body, ["token"]);

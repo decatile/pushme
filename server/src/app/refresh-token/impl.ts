@@ -20,7 +20,10 @@ export function createRefreshTokenService(
     },
     findByIdAndRotate(id) {
       return dataSource.transaction(async (em) => {
-        const old = await em.findOneBy(RefreshToken, { id });
+        const old = await em.findOne(RefreshToken, {
+          where: { id },
+          relations: { user: true },
+        });
         if (!old) {
           throw Error("not-found");
         }

@@ -152,6 +152,7 @@ export function appWithRoutes<Full extends boolean = false>(
           httpOnly: true,
           expires: rToken!.expiresAt,
           path: "/auth/refresh",
+          signed: true
         })
         .send({ token: aToken });
     });
@@ -198,6 +199,7 @@ export function appWithRoutes<Full extends boolean = false>(
             httpOnly: true,
             expires: rToken.expiresAt,
             path: "/auth/refresh",
+            signed: true
           })
           .send({ token: aToken });
       }
