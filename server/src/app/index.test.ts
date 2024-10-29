@@ -44,7 +44,7 @@ tap.test("/up not-present", async (t) => {
 
 tap.test("/up invalid", async (t) => {
   const app = await createDefaultApp({ "/up": {} });
-  const resp = await request(app, requests.up().withAuth('beliberda'));
+  const resp = await request(app, requests.up().withAuth("beliberda"));
   t.equal(resp.statusCode, 200);
   const json = await resp.json();
   t.hasOwnPropsOnly(json, ["token"]);
