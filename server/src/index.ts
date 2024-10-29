@@ -11,6 +11,7 @@ import { createApp, appWithRoutes } from "./app";
 import dataSource from "./db";
 import { createTelegramService } from "./app/telegram/impl";
 import { createUsersService } from "./app/users/impl";
+import { createRefreshTokenService } from "./app/refresh-token/impl";
 
 (async () => {
   await dataSource.initialize();
@@ -22,11 +23,21 @@ import { createUsersService } from "./app/users/impl";
     cookieSecret: SERVER_COOKIE_SECRET,
     isProduction: IS_PRODUCTION,
   });
+  const telegramService = createTelegramService(
+    redis as RedisClientType,
+    app.log
+  );
+  const usersService = createUsersService(dataSource);
+  const refreshTokenService = createRefreshTokenService(dataSource, {
+    expiresIn: 1000 * 60 * 60 * 24 * 30,
+  });
   appWithRoutes<true>(app, {
     "/up": {},
+    "/auth/refresh": { refreshToken: refreshTokenService },
     "/auth/accept-code": {
-      telegram: createTelegramService(redis as RedisClientType, app.log),
-      users: createUsersService(dataSource),
+      refreshToken: refreshTokenService,
+      telegram: telegramService,
+      users: usersService,
     },
   });
   await app.listen({ host: SERVER_HOST, port: SERVER_PORT });

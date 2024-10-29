@@ -6,6 +6,8 @@ import fastifyCookie from "@fastify/cookie";
 import fastifyCors from "@fastify/cors";
 import fastifySwagger from "@fastify/swagger";
 import { fastifySwaggerUi } from "@fastify/swagger-ui";
+import { RefreshTokenService } from "./refresh-token";
+import { RefreshToken } from "../db/entities";
 
 declare module "fastify" {
   interface FastifyInstance {
@@ -28,15 +30,22 @@ function makeUse(services: Services, log: FastifyBaseLogger) {
 
 export type Services = Partial<{
   "/up": {};
-  "/auth/accept-code": { telegram: TelegramService; users: UsersService };
+  "/auth/refresh": {
+    refreshToken: RefreshTokenService;
+  };
+  "/auth/accept-code": {
+    refreshToken: RefreshTokenService;
+    telegram: TelegramService;
+    users: UsersService;
+  };
 }>;
 
-export type Options = {
+export interface Options {
   logLevel: string;
   jwtSecret: string;
   cookieSecret: string;
   isProduction?: boolean;
-};
+}
 
 export async function createApp(options: Options): Promise<FastifyInstance> {
   const app = fastify({
@@ -116,7 +125,38 @@ export function appWithRoutes<Full extends boolean = false>(
       }
     )
   );
-  use("/auth/accept-code", ({ telegram, users, url }) => {
+  use("/auth/refresh", ({ refreshToken, url }) => {
+    app.get(url, async (request, reply) => {
+      const cookie = request.cookies["refresh_token"];
+      if (!cookie) {
+        return reply.code(400).send({ error: "no-refresh-cookie" });
+      }
+      const { value, valid } = request.unsignCookie(cookie);
+      if (!valid) {
+        return reply.code(400).send({ error: "invalid-refresh-cookie" });
+      }
+      let rToken: RefreshToken;
+      try {
+        rToken = await refreshToken.findByIdAndRotate(value);
+      } catch (e) {
+        switch (e) {
+          case "not-found":
+            return reply.code(400).send({ error: "no-refresh-token-id" });
+          case "expired":
+            return reply.code(400).send({ error: "expired-refresh-token" });
+        }
+      }
+      const aToken = await reply.jwtSign({ uid: rToken!.user.id });
+      await reply
+        .cookie("refresh_token", rToken!.id, {
+          httpOnly: true,
+          expires: rToken!.expiresAt,
+          path: "/auth/refresh",
+        })
+        .send({ token: aToken });
+    });
+  });
+  use("/auth/accept-code", ({ refreshToken, telegram, users, url }) => {
     app.get(
       url,
       {
@@ -151,8 +191,15 @@ export function appWithRoutes<Full extends boolean = false>(
           throw { statusCode: 400, message: "invalid-telegram-code" };
         }
         const user = await users.getOrCreateUserByTelegram(telegramID);
-        const token = await reply.jwtSign({ uid: user.id });
-        await reply.send({ token });
+        const rToken = await refreshToken.newToken(user);
+        const aToken = await reply.jwtSign({ uid: user.id });
+        await reply
+          .cookie("refresh_token", rToken.id, {
+            httpOnly: true,
+            expires: rToken.expiresAt,
+            path: "/auth/refresh",
+          })
+          .send({ token: aToken });
       }
     );
   });

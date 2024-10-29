@@ -1,11 +1,13 @@
 import tap from "tap";
 import { createApp, appWithRoutes, Services } from ".";
-import { User } from "../db/entities";
+import { RefreshToken, User } from "../db/entities";
 import { FastifyInstance, InjectOptions } from "fastify";
 import { TelegramService } from "./telegram";
 import { UsersService } from "./users";
 import sinon from "sinon";
+import { RefreshTokenService } from "./refresh-token";
 
+const refreshTokenService: RefreshTokenService = {} as any;
 const telegramService: TelegramService = {} as any;
 const usersService: UsersService = {} as any;
 
@@ -54,7 +56,33 @@ tap.test("/up invalid", async (t) => {
   t.end();
 });
 
+tap.test("/auth/rotate returns valid token", async (t) => {
+  sinon.define(refreshTokenService, "findByIdAndRotate", async () => ({
+    ...new RefreshToken(
+      { ...new User("1"), id: 1 },
+      new Date(Date.now() + 1000)
+    ),
+  }));
+  const app = await createDefaultApp({
+    "/auth/refresh": {
+      refreshToken: refreshTokenService,
+    },
+  });
+  const resp = await request(app, {
+    path: "/auth/refresh",
+    cookies: { refresh_token: app.signCookie("hello-world") },
+  });
+  t.equal(resp.statusCode, 200);
+  t.end();
+});
+
 tap.test("/auth/accept-code returns valid token", async (t) => {
+  sinon.define(refreshTokenService, "newToken", async (user: User) => {
+    return {
+      ...new RefreshToken(user, new Date(Date.now() + 1000)),
+      id: "hello-world",
+    };
+  });
   sinon.define(telegramService, "acceptCode", async () => "1");
   sinon.define(usersService, "getOrCreateUserByTelegram", async () => ({
     ...new User("1"),
@@ -62,15 +90,22 @@ tap.test("/auth/accept-code returns valid token", async (t) => {
   }));
   const app = await createDefaultApp({
     "/auth/accept-code": {
+      refreshToken: refreshTokenService,
       telegram: telegramService,
       users: usersService,
     },
   });
-  const resp = (
-    await request(app, { path: "/auth/accept-code", query: { code: "hey" } })
-  ).json();
-  t.hasOwnPropsOnly(resp, ["token"]);
-  const token = app.jwt.decode<any>(resp.token);
+  const resp = await request(app, {
+    path: "/auth/accept-code",
+    query: { code: "hey" },
+  });
+  const refreshTokenCookie = resp.cookies.find(
+    (x) => x.name === "refresh_token"
+  )!.value;
+  t.equal(refreshTokenCookie, "hello-world");
+  const body = await resp.json();
+  t.hasOwnPropsOnly(body, ["token"]);
+  const token = app.jwt.decode<any>(body.token);
   t.hasOwnPropsOnly(token, ["uid", "iat", "exp"]);
   t.end();
 });
@@ -82,6 +117,7 @@ tap.test("/auth/accept-code handle code not found", async (t) => {
   const resp = await request(
     await createDefaultApp({
       "/auth/accept-code": {
+        refreshToken: refreshTokenService,
         telegram: telegramService,
         users: usersService,
       },

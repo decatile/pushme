@@ -14,19 +14,22 @@ export class User {
   id: number;
 
   @Column()
-  telegram_id: string;
+  telegramId: string;
 
   @OneToMany(() => Notification, (photo) => photo.user)
   notifications: Notification[];
 
+  @OneToMany(() => RefreshToken, (token) => token.user)
+  refreshTokens: RefreshToken[];
+
   @CreateDateColumn()
-  created_at: Date;
+  createdAt: Date;
 
   @UpdateDateColumn()
-  updated_at: Date;
+  updatedAt: Date;
 
   constructor(telegramId: string) {
-    this.telegram_id = telegramId;
+    this.telegramId = telegramId;
   }
 }
 
@@ -39,20 +42,43 @@ export class Notification {
   user: User;
 
   @Column()
-  content_title: string;
+  contentTitle: string;
 
   @Column()
-  content_body: string;
+  contentBody: string;
 
   @CreateDateColumn()
-  created_at: Date;
+  createdAt: Date;
 
   @UpdateDateColumn()
-  updated_at: Date;
+  updatedAt: Date;
 
   constructor(user: User, title: string, body: string) {
     this.user = user;
-    this.content_title = title;
-    this.content_body = body;
+    this.contentTitle = title;
+    this.contentBody = body;
+  }
+}
+
+@Entity()
+export class RefreshToken {
+  @PrimaryGeneratedColumn("uuid")
+  id: string;
+
+  @ManyToOne(() => User, (user) => user.refreshTokens)
+  user: User;
+
+  @Column()
+  expiresAt: Date;
+
+  @CreateDateColumn()
+  createdAt: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
+
+  constructor(user: User, expiresAt: Date) {
+    this.user = user;
+    this.expiresAt = expiresAt;
   }
 }

@@ -7,7 +7,8 @@ import {
   POSTGRES_PASSWORD,
   POSTGRES_USERNAME,
 } from "../config";
-import { User, Notification } from "./entities";
+import { User, Notification, RefreshToken } from "./entities";
+import { SnakeNamingStrategy } from "typeorm-naming-strategies";
 
 export default new DataSource({
   type: "postgres",
@@ -16,6 +17,7 @@ export default new DataSource({
   username: POSTGRES_USERNAME,
   password: POSTGRES_PASSWORD,
   database: POSTGRES_DATABASE,
-  entities: [User, Notification],
+  entities: [User, Notification, RefreshToken],
   synchronize: true,
+  namingStrategy: new SnakeNamingStrategy(),
 });

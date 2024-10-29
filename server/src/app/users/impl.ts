@@ -7,7 +7,7 @@ export function createUsersService(dataSource: DataSource): UsersService {
 
   return {
     async getOrCreateUserByTelegram(telegramId) {
-      let user = await userRepo.findOneBy({ telegram_id: telegramId });
+      let user = await userRepo.findOneBy({ telegramId });
       if (!user) {
         user = await userRepo.save(new User(telegramId));
       }
