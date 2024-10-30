@@ -1,6 +1,6 @@
 import { DataSource } from "typeorm";
 import { NotificationService } from ".";
-import { Notification } from "../../db/entities";
+import { Notification, User } from "../../db/entities";
 import {
   fromSerializedSchedule,
   intoSerializedSchedule,
@@ -12,9 +12,14 @@ export function createNotificationService(
   const notificationRepo = dataSource.getRepository(Notification);
 
   return {
-    newNotification(user, title, body, schedule) {
+    newNotification(userId, title, body, schedule) {
       return notificationRepo.save(
-        new Notification(user, title, body, fromSerializedSchedule(schedule))
+        new Notification(
+          { id: userId } as User,
+          title,
+          body,
+          fromSerializedSchedule(schedule)
+        )
       );
     },
     editNotification(notification, { schedule, ...edit }) {

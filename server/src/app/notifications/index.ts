@@ -10,7 +10,7 @@ export type NotificationDto = {
 
 export interface NotificationService {
   newNotification(
-    user: User,
+    userId: number,
     title: string,
     body: string,
     schedule: SerializedNotificationSchedule

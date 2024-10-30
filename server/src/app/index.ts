@@ -233,12 +233,10 @@ export function appWithRoutes<Full extends boolean = false>(
       },
       async (request, reply) => {
         const { uid } = (await request.jwtDecode()) as { uid: number };
-        const user = await usersService.getById(uid);
-        if (!user) throw { message: "User not found" };
         const { title, body, schedule } = request.body.notification;
         try {
           await notificationService.newNotification(
-            user,
+            uid,
             title,
             body,
             schedule
