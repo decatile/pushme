@@ -21,6 +21,9 @@ export function createRefreshTokenService(
         )
       );
     },
+    async removeToken(tokenId) {
+      await tokenRepo.delete({ id: tokenId });
+    },
     findByIdAndRotate(id) {
       return dataSource.transaction(async (em) => {
         const old = await em.findOne(RefreshToken, {

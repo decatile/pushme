@@ -7,6 +7,8 @@ export interface RefreshTokenService {
    */
   newToken(userId: number): Promise<RefreshToken>;
 
+  removeToken(tokenId: string): Promise<void>;
+
   /**
    * @param id - refresh token id
    * @returns New refresh token

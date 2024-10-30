@@ -35,7 +35,12 @@ import { createNotificationService } from "./app/notifications/impl";
   const notificationService = createNotificationService(dataSource);
   appWithRoutes<true>(app, {
     "/up": {},
-    "/auth/refresh": { refreshTokenService: refreshTokenService },
+    "/auth/refresh": {
+      refreshTokenService: refreshTokenService,
+    },
+    "/auth/refresh/logout": {
+      refreshTokenService,
+    },
     "/auth/accept-code": {
       refreshTokenService,
       telegramService,
@@ -49,7 +54,6 @@ import { createNotificationService } from "./app/notifications/impl";
       notificationService,
     },
     "/notification/all": {
-      usersService,
       notificationService,
     },
   });

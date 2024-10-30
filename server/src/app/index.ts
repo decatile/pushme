@@ -35,6 +35,9 @@ export type Services = Partial<{
   "/auth/refresh": {
     refreshTokenService: RefreshTokenService;
   };
+  "/auth/refresh/logout": {
+    refreshTokenService: RefreshTokenService;
+  };
   "/auth/accept-code": {
     refreshTokenService: RefreshTokenService;
     telegramService: TelegramService;
@@ -185,6 +188,20 @@ export function appWithRoutes<Full extends boolean = false>(
       }
     );
   });
+  use("/auth/refresh/logout", ({ refreshTokenService, url }) => {
+    app.zod.get(url, { operationId: "authLogout" }, async (request, reply) => {
+      const cookie = request.cookies["refresh_token"];
+      if (!cookie) {
+        throw { statusCode: 400, message: "no-refresh-cookie" };
+      }
+      const { value, valid } = request.unsignCookie(cookie);
+      if (!valid) {
+        throw { statusCode: 400, message: "invalid-refresh-cookie" };
+      }
+      await refreshTokenService.removeToken(value);
+      await reply.clearCookie("refresh_token").send();
+    });
+  });
   use(
     "/auth/accept-code",
     ({ refreshTokenService, telegramService, usersService: users, url }) => {
@@ -234,12 +251,7 @@ export function appWithRoutes<Full extends boolean = false>(
         const { uid } = (await request.jwtDecode()) as { uid: number };
         const { title, body, schedule } = request.body.notification;
         try {
-          await notificationService.newNotification(
-            uid,
-            title,
-            body,
-            schedule
-          );
+          await notificationService.newNotification(uid, title, body, schedule);
         } catch (e) {
           switch (e) {
             case "invalid-schedule":
