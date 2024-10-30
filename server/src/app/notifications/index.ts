@@ -27,5 +27,5 @@ export interface NotificationService {
 
   getById(id: number): Promise<Notification | null>;
 
-  getAll(user: User): Promise<NotificationDto[]>;
+  getAll(userId: number): Promise<NotificationDto[]>;
 }

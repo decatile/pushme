@@ -52,7 +52,7 @@ export class Notification {
   contentBody: string;
 
   @Column({
-    type: "string",
+    type: "text",
     transformer: notificationScheduleTransformer,
   })
   schedule: NotificationSchedule;

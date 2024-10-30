@@ -5,7 +5,7 @@ export interface RefreshTokenService {
    * @param user - user which owns refresh token
    * @returns User's refresh token
    */
-  newToken(user: User): Promise<RefreshToken>;
+  newToken(userId: number): Promise<RefreshToken>;
 
   /**
    * @param id - refresh token id

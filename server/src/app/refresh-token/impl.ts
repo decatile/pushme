@@ -13,9 +13,12 @@ export function createRefreshTokenService(
   const tokenRepo = dataSource.getRepository(RefreshToken);
 
   return {
-    newToken(user: User) {
+    newToken(userId) {
       return tokenRepo.save(
-        new RefreshToken(user, new Date(Date.now() + options.expiresIn))
+        new RefreshToken(
+          { id: userId } as User,
+          new Date(Date.now() + options.expiresIn)
+        )
       );
     },
     findByIdAndRotate(id) {
@@ -25,11 +28,11 @@ export function createRefreshTokenService(
           relations: { user: true },
         });
         if (!old) {
-          throw Error("not-found");
+          throw "not-found";
         }
         await em.delete(RefreshToken, old);
         if (old.expiresAt < new Date()) {
-          throw Error("expired");
+          throw "expired";
         }
         return em.save(
           RefreshToken,

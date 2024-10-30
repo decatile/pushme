@@ -30,8 +30,8 @@ export function createNotificationService(
         relations: { user: true },
       });
     },
-    async getAll(user) {
-      const resp = await notificationRepo.findBy({ user });
+    async getAll(userId) {
+      const resp = await notificationRepo.findBy({ user: { id: userId } });
       return resp.map((x) => ({
         id: x.id,
         title: x.contentTitle,

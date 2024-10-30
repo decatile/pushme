@@ -123,7 +123,11 @@ export function appWithRoutes<Full extends boolean = false>(
   use("/up", ({ url }) =>
     app.zod.get(
       url,
-      { operationId: "up", security: [{}, { jwt: [] }] },
+      {
+        operationId: "up",
+        security: [{}, { jwt: [] }],
+        response: { 200: "tokenResponse" },
+      },
       async (request, reply) => {
         await reply.send({
           token: await request
@@ -142,36 +146,45 @@ export function appWithRoutes<Full extends boolean = false>(
     )
   );
   use("/auth/refresh", ({ refreshTokenService, url }) => {
-    app.zod.get(url, { operationId: "authRefresh" }, async (request, reply) => {
-      const cookie = request.cookies["refresh_token"];
-      if (!cookie) {
-        return reply.code(400).send({ error: "no-refresh-cookie" });
-      }
-      const { value, valid } = request.unsignCookie(cookie);
-      if (!valid) {
-        return reply.code(400).send({ error: "invalid-refresh-cookie" });
-      }
-      let rToken: RefreshToken;
-      try {
-        rToken = await refreshTokenService.findByIdAndRotate(value);
-      } catch (e) {
-        switch (e) {
-          case "not-found":
-            return reply.code(400).send({ error: "no-refresh-token-id" });
-          case "expired":
-            return reply.code(400).send({ error: "expired-refresh-token" });
+    app.zod.get(
+      url,
+      {
+        operationId: "authRefresh",
+        response: { 200: "tokenResponse" },
+      },
+      async (request, reply) => {
+        const cookie = request.cookies["refresh_token"];
+        if (!cookie) {
+          throw { statusCode: 400, message: "no-refresh-cookie" };
         }
+        const { value, valid } = request.unsignCookie(cookie);
+        if (!valid) {
+          throw { statusCode: 400, message: "invalid-refresh-cookie" };
+        }
+        let rToken: RefreshToken;
+        try {
+          rToken = await refreshTokenService.findByIdAndRotate(value);
+        } catch (e) {
+          switch (e) {
+            case "not-found":
+              throw { statusCode: 400, message: "no-refresh-token-id" };
+            case "expired":
+              throw { statusCode: 400, message: "expired-refresh-token" };
+            default:
+              throw { message: e };
+          }
+        }
+        const aToken = await reply.jwtSign({ uid: rToken!.user.id });
+        await reply
+          .cookie("refresh_token", rToken!.id, {
+            httpOnly: true,
+            expires: rToken!.expiresAt,
+            path: "/auth/refresh",
+            signed: true,
+          })
+          .send({ token: aToken });
       }
-      const aToken = await reply.jwtSign({ uid: rToken!.user.id });
-      await reply
-        .cookie("refresh_token", rToken!.id, {
-          httpOnly: true,
-          expires: rToken!.expiresAt,
-          path: "/auth/refresh",
-          signed: true,
-        })
-        .send({ token: aToken });
-    });
+    );
   });
   use(
     "/auth/accept-code",
@@ -181,16 +194,22 @@ export function appWithRoutes<Full extends boolean = false>(
         {
           operationId: "authAcceptCode",
           querystring: "authAcceptCodeQuery",
+          response: { 200: "tokenResponse" },
         },
         async (request, reply) => {
           let telegramID: string;
           try {
             telegramID = await telegramService.acceptCode(request.query.code);
-          } catch {
-            throw { statusCode: 400, message: "invalid-telegram-code" };
+          } catch (e) {
+            switch (e) {
+              case "invalid-code":
+                throw { statusCode: 400, message: "invalid-telegram-code" };
+              default:
+                throw { message: e };
+            }
           }
           const user = await users.getOrCreateUserByTelegram(telegramID);
-          const rToken = await refreshTokenService.newToken(user);
+          const rToken = await refreshTokenService.newToken(user.id);
           const aToken = await reply.jwtSign({ uid: user.id });
           await reply
             .cookie("refresh_token", rToken.id, {
@@ -214,10 +233,12 @@ export function appWithRoutes<Full extends boolean = false>(
       },
       async (request, reply) => {
         const { uid } = (await request.jwtDecode()) as { uid: number };
+        const user = await usersService.getById(uid);
+        if (!user) throw { message: "User not found" };
         const { title, body, schedule } = request.body.notification;
         try {
           await notificationService.newNotification(
-            (await usersService.getById(uid))!,
+            user,
             title,
             body,
             schedule
@@ -226,6 +247,8 @@ export function appWithRoutes<Full extends boolean = false>(
           switch (e) {
             case "invalid-schedule":
               throw { statusCode: 400, message: e };
+            default:
+              throw { message: e };
           }
         }
         await reply.send();
@@ -261,6 +284,8 @@ export function appWithRoutes<Full extends boolean = false>(
           switch (e) {
             case "invalid-schedule":
               throw { statusCode: 400, message: e };
+            default:
+              throw { message: e };
           }
         }
         await reply.send();
@@ -273,11 +298,11 @@ export function appWithRoutes<Full extends boolean = false>(
       {
         operationId: "notificationAll",
         security: [{ jwt: [] }],
+        response: { 200: "notificationDtosResponse" },
       },
       async (request, reply) => {
         const { uid } = (await request.jwtDecode()) as { uid: number };
-        const user = await usersService.getById(uid);
-        await reply.send(await notificationService.getAll(user!));
+        await reply.send(await notificationService.getAll(uid));
       }
     );
   });
