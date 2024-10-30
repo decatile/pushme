@@ -36,7 +36,7 @@ import { createNotificationService } from "./app/notifications/impl";
   appWithRoutes<true>(app, {
     "/up": {},
     "/auth/refresh": {
-      refreshTokenService: refreshTokenService,
+      refreshTokenService,
     },
     "/auth/refresh/logout": {
       refreshTokenService,
