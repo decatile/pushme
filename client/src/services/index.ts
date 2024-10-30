@@ -32,5 +32,19 @@ export namespace requests {
         query: { code },
       });
     }
+
+    export function logout(): InjectOptionsExtensions {
+      return _({
+        method: "get",
+        path: "/auth/refresh/logout",
+      });
+    }
+
+    export function refreshToken(): InjectOptionsExtensions {
+      return _({
+        method: "get",
+        path: "/auth/refresh",
+      });
+    }
   }
 }

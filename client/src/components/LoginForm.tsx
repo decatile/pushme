@@ -1,4 +1,4 @@
-import { AuthService } from "@/services/services/auth";
+import { useAuth } from "@/context/AuthContext/AuthContext";
 import { Button } from "@/ui/button";
 import {
   Card,
@@ -13,13 +13,12 @@ import { useState } from "react";
 
 const LoginForm = () => {
   const [code, setCode] = useState("");
+  const auth = useAuth();
 
-  const handleLogin = async (event: React.FormEvent<HTMLFormElement>) => {
+  const handleLogin = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     console.log("login click");
-
-    const a = await AuthService.sendCode(code);
-    console.log("res", a);
+    auth.login(code);
   };
 
   return (

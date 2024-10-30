@@ -3,6 +3,7 @@ import Login from "@/pages/Login";
 import { AuthProvider } from "./context/AuthContext/AuthContext";
 import PrivateRoute from "./components/PrivateRoute";
 import Main from "./pages/Main";
+import PublicRoute from "./components/PublicRoute";
 
 const Layout = () => {
   return (
@@ -19,6 +20,7 @@ const router = createBrowserRouter([
     path: "/",
     element: <Layout />,
     children: [
+      //приватные пути
       {
         path: "/",
         element: <PrivateRoute />,
@@ -33,9 +35,15 @@ const router = createBrowserRouter([
           },
         ],
       },
+      //ограниченные публичные пути, недоступные авторизованному пользователю
       {
-        path: "/login",
-        element: <Login />,
+        element: <PublicRoute restricted={true} />,
+        children: [
+          {
+            path: "/login",
+            element: <Login />,
+          },
+        ],
       },
     ],
   },

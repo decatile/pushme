@@ -10,8 +10,8 @@ services:
     environment:
       VITE_SERVER_API_URL: http://localhost:8080
     volumes:
-      - ./client:/app/client
-      - /app/client/node_modules
+      - ./client:/app
+      - /app/node_modules
     develop:
       # we specify the files to watch for changes
       watch:

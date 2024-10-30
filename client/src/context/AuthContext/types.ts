@@ -8,5 +8,4 @@ export interface IAuthContext {
   token: string;
   login: (credentials: any) => void;
   logout: () => void;
-  isAuthorized: () => void | string;
 }

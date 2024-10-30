@@ -1,5 +1,5 @@
 import { AuthService } from "@/services/services/auth";
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { IAuthContext, IAuthProvider } from "./types";
 
@@ -7,7 +7,6 @@ const AuthContext = createContext<IAuthContext>({
   token: "",
   login: () => {},
   logout: () => {},
-  isAuthorized: () => {},
 });
 
 export function AuthProvider({ children }: IAuthProvider) {
@@ -16,29 +15,24 @@ export function AuthProvider({ children }: IAuthProvider) {
   );
   const navigate = useNavigate();
 
-  const isAuthorized = () => {
-    if (!token) {
-      navigate("/login");
-    } else {
-      return token;
-    }
-  };
-
-  const login = async ({ credentials }: { credentials: string }) => {
-    const response = await AuthService.sendCode(credentials);
+  const login = async (code: string) => {
+    const response = await AuthService.sendCode(code);
     setToken(response.data.token);
     localStorage.setItem("pushme-token", response.data.token);
+    console.log("token", response.data);
     navigate("/");
   };
 
-  const logout = () => {
+  const logout = async () => {
+    const response = await AuthService.logout();
+    console.log("logout", response);
     setToken("");
     localStorage.removeItem("pushme-token");
     navigate("/login");
   };
 
   return (
-    <AuthContext.Provider value={{ token, login, logout, isAuthorized }}>
+    <AuthContext.Provider value={{ token, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
