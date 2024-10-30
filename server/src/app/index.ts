@@ -48,7 +48,6 @@ export type Services = Partial<{
     notificationService: NotificationService;
   };
   "/notification/all": {
-    usersService: UsersService;
     notificationService: NotificationService;
   };
 }>;
@@ -290,7 +289,7 @@ export function appWithRoutes<Full extends boolean = false>(
       }
     );
   });
-  use("/notification/all", ({ usersService, notificationService, url }) => {
+  use("/notification/all", ({ notificationService, url }) => {
     app.zod.get(
       url,
       {
