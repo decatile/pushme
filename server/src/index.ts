@@ -49,7 +49,6 @@ import { createNotificationService } from "./app/notifications/impl";
       usersService,
     },
     "/notification/new": {
-      usersService,
       notificationService,
     },
     "/notification/edit": {

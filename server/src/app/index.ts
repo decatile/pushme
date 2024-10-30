@@ -44,7 +44,6 @@ export type Services = Partial<{
     usersService: UsersService;
   };
   "/notification/new": {
-    usersService: UsersService;
     notificationService: NotificationService;
   };
   "/notification/edit": {
@@ -200,7 +199,9 @@ export function appWithRoutes<Full extends boolean = false>(
         throw { statusCode: 400, message: "invalid-refresh-cookie" };
       }
       await refreshTokenService.removeToken(value);
-      await reply.clearCookie("refresh_token").send();
+      await reply
+        .clearCookie("refresh_token", { path: "/auth/refresh" })
+        .send();
     });
   });
   use(
@@ -240,7 +241,7 @@ export function appWithRoutes<Full extends boolean = false>(
       );
     }
   );
-  use("/notification/new", ({ usersService, notificationService, url }) => {
+  use("/notification/new", ({  notificationService, url }) => {
     app.zod.post(
       url,
       {
