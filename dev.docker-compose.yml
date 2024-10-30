@@ -9,6 +9,8 @@ services:
       - 5173:5173
     environment:
       VITE_SERVER_API_URL: http://localhost:8080
+    env_file:
+      - .env.client
     volumes:
       - ./client:/app
       - /app/node_modules
@@ -35,7 +37,7 @@ services:
     ports:
       - 8080:8080
     env_file:
-      - .env
+      - .env.server
     environment:
       POSTGRES_DATABASE: pushme
       POSTGRES_USERNAME: postgres
@@ -44,6 +46,7 @@ services:
       POSTGRES_PORT: 5432
       SERVER_HOST: 0.0.0.0
       SERVER_PORT: 8080
+      SERVER_ALLOW_ORIGINS: http://localhost:5173
       REDIS_URL: redis://default:default@redis:6379/0
 
   postgres:

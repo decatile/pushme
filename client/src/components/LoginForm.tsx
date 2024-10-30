@@ -52,7 +52,8 @@ const LoginForm = () => {
             <Separator className="flex-grow max-w-[calc(50%-2rem)]" />
           </div>
           <a
-            href="tg://resolve?domain=pushme01bot/"
+            href={import.meta.env.VITE_BOT_URL}
+            target="_blank"
             className="w-full block text-center border rounded-md px-3 py-1 text-sm"
           >
             Написать боту

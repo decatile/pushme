@@ -60,6 +60,7 @@ export interface Options {
   jwtSecret: string;
   cookieSecret: string;
   isProduction?: boolean;
+  origins?: string[];
 }
 
 export async function createApp(options: Options): Promise<FastifyInstance> {
@@ -100,7 +101,7 @@ export async function createApp(options: Options): Promise<FastifyInstance> {
       secret: options.jwtSecret,
       sign: { expiresIn: "30m" },
     })
-    .register(fastifyCors, { origin: `*` });
+    .register(fastifyCors, { origin: options.origins, credentials: true });
   app.setErrorHandler((error, _, reply) => {
     if (!error.statusCode) {
       app.log.error(error);

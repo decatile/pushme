@@ -5,6 +5,7 @@ import {
   SERVER_JWT_SECRET,
   SERVER_COOKIE_SECRET,
   SERVER_PORT,
+  SERVER_ALLOW_ORIGINS,
 } from "./config";
 import { createClient, RedisClientType } from "redis";
 import { createApp, appWithRoutes } from "./app";
@@ -22,6 +23,7 @@ import { createNotificationService } from "./app/notifications/impl";
     logLevel: "debug",
     jwtSecret: SERVER_JWT_SECRET,
     cookieSecret: SERVER_COOKIE_SECRET,
+    origins: SERVER_ALLOW_ORIGINS,
     isProduction: IS_PRODUCTION,
   });
   const telegramService = createTelegramService(

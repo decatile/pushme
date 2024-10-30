@@ -11,7 +11,7 @@ const AuthContext = createContext<IAuthContext>({
 
 export function AuthProvider({ children }: IAuthProvider) {
   const [token, setToken] = useState<string>(
-    localStorage.getItem("pushme-token") || ""
+    ""
   );
   const navigate = useNavigate();
 
