@@ -45,6 +45,13 @@ import { createNotificationService } from "./app/notifications/impl";
       usersService,
       notificationService,
     },
+    "/notification/edit": {
+      notificationService,
+    },
+    "/notification/all": {
+      usersService,
+      notificationService,
+    },
   });
   await app.listen({ host: SERVER_HOST, port: SERVER_PORT });
 })();

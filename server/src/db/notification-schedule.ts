@@ -35,3 +35,12 @@ export function fromSerializedSchedule(
       return { kind: "fixed", when: when };
   }
 }
+
+export function intoSerializedSchedule(
+  schedule: NotificationSchedule
+): SerializedNotificationSchedule {
+  switch (schedule.kind) {
+    case "fixed":
+      return { kind: "fixed", when: schedule.when.map(String) };
+  }
+}

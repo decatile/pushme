@@ -5,7 +5,7 @@ export interface UsersService {
    * @param id - User ID
    * @returns User object
    */
-  getById(id: number): Promise<User>;
+  getById(id: number): Promise<User | null>;
 
   /**
    * @param telegramId - Telegram ID

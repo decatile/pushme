@@ -44,6 +44,13 @@ export type Services = Partial<{
     usersService: UsersService;
     notificationService: NotificationService;
   };
+  "/notification/edit": {
+    notificationService: NotificationService;
+  };
+  "/notification/all": {
+    usersService: UsersService;
+    notificationService: NotificationService;
+  };
 }>;
 
 export interface Options {
@@ -116,7 +123,7 @@ export function appWithRoutes<Full extends boolean = false>(
   use("/up", ({ url }) =>
     app.zod.get(
       url,
-      { operationId: "up", security: [{ jwt: [] }] },
+      { operationId: "up", security: [{}, { jwt: [] }] },
       async (request, reply) => {
         await reply.send({
           token: await request
@@ -197,36 +204,81 @@ export function appWithRoutes<Full extends boolean = false>(
       );
     }
   );
-  use(
-    "/notification/new",
-    async ({ usersService, notificationService, url }) => {
-      app.zod.post(
-        url,
-        {
-          operationId: "notificationNew",
-          body: "notificationNewBody",
-          security: [{ jwt: [] }],
-        },
-        async (request, reply) => {
-          const { uid } = (await request.jwtDecode()) as { uid: number };
-          const { title, body, schedule } = request.body.notification;
-          let notification: Notification;
-          try {
-            notification = await notificationService.newNotification(
-              await usersService.getById(uid),
-              title,
-              body,
-              schedule
-            );
-          } catch (e) {
-            switch (e) {
-              case "invalid-schedule":
-                throw { statusCode: 400, message: e };
-            }
+  use("/notification/new", ({ usersService, notificationService, url }) => {
+    app.zod.post(
+      url,
+      {
+        operationId: "notificationNew",
+        body: "notificationNewBody",
+        security: [{ jwt: [] }],
+      },
+      async (request, reply) => {
+        const { uid } = (await request.jwtDecode()) as { uid: number };
+        const { title, body, schedule } = request.body.notification;
+        try {
+          await notificationService.newNotification(
+            (await usersService.getById(uid))!,
+            title,
+            body,
+            schedule
+          );
+        } catch (e) {
+          switch (e) {
+            case "invalid-schedule":
+              throw { statusCode: 400, message: e };
           }
-          await reply.send({});
         }
-      );
-    }
-  );
+        await reply.send();
+      }
+    );
+  });
+  use("/notification/edit", ({ notificationService, url }) => {
+    app.zod.post(
+      url,
+      {
+        operationId: "notificationEdit",
+        body: "notificationEditBody",
+        security: [{ jwt: [] }],
+      },
+      async (request, reply) => {
+        const { uid } = (await request.jwtDecode()) as { uid: number };
+        const {
+          notification: { id, ...edit },
+        } = request.body;
+        const notification = await notificationService.getById(id);
+        if (!notification) {
+          throw { statusCode: 400, message: "notification-not-found" };
+        }
+        if (notification.user.id !== uid) {
+          throw {
+            statusCode: 400,
+            message: "notification-not-owned-by-user",
+          };
+        }
+        try {
+          await notificationService.editNotification(notification, edit);
+        } catch (e) {
+          switch (e) {
+            case "invalid-schedule":
+              throw { statusCode: 400, message: e };
+          }
+        }
+        await reply.send();
+      }
+    );
+  });
+  use("/notification/all", ({ usersService, notificationService, url }) => {
+    app.zod.get(
+      url,
+      {
+        operationId: "notificationAll",
+        security: [{ jwt: [] }],
+      },
+      async (request, reply) => {
+        const { uid } = (await request.jwtDecode()) as { uid: number };
+        const user = await usersService.getById(uid);
+        await reply.send(await notificationService.getAll(user!));
+      }
+    );
+  });
 }

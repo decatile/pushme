@@ -3,7 +3,7 @@ import { NotificationService } from ".";
 import { Notification } from "../../db/entities";
 import {
   fromSerializedSchedule,
-  NotificationSchedule,
+  intoSerializedSchedule,
 } from "../../db/notification-schedule";
 
 export function createNotificationService(
@@ -17,8 +17,27 @@ export function createNotificationService(
         new Notification(user, title, body, fromSerializedSchedule(schedule))
       );
     },
-    editNotification(notification, edit) {
-      return notificationRepo.save({ ...notification, ...edit });
+    editNotification(notification, { schedule, ...edit }) {
+      return notificationRepo.save({
+        ...notification,
+        ...edit,
+        schedule: schedule && fromSerializedSchedule(schedule),
+      });
+    },
+    getById(id: number): Promise<Notification | null> {
+      return notificationRepo.findOne({
+        where: { id },
+        relations: { user: true },
+      });
+    },
+    async getAll(user) {
+      const resp = await notificationRepo.findBy({ user });
+      return resp.map((x) => ({
+        id: x.id,
+        title: x.contentTitle,
+        body: x.contentBody,
+        schedule: intoSerializedSchedule(x.schedule),
+      }));
     },
   };
 }

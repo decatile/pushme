@@ -13,5 +13,8 @@ export function createUsersService(dataSource: DataSource): UsersService {
       }
       return user;
     },
+    getById(id) {
+      return userRepo.findOneBy({ id });
+    },
   };
 }

@@ -1,7 +1,12 @@
 import { Notification, User } from "../../db/entities";
 import { SerializedNotificationSchedule } from "../../db/notification-schedule";
 
-type PickAny<T, K extends keyof T> = Partial<Pick<T, K>>;
+export type NotificationDto = {
+  id: number;
+  title: string;
+  body: string;
+  schedule: SerializedNotificationSchedule;
+};
 
 export interface NotificationService {
   newNotification(
@@ -13,6 +18,14 @@ export interface NotificationService {
 
   editNotification(
     notification: Notification,
-    edit: PickAny<Notification, "contentTitle" | "contentBody" | "schedule">
+    edit: Partial<
+      Pick<Notification, "contentTitle" | "contentBody"> & {
+        schedule: SerializedNotificationSchedule;
+      }
+    >
   ): Promise<Notification>;
+
+  getById(id: number): Promise<Notification | null>;
+
+  getAll(user: User): Promise<NotificationDto[]>;
 }

@@ -12,3 +12,9 @@ export const notificationNewBody = z.object({
     }),
   }),
 });
+
+export const notificationEditBody = z.object({
+  notification: notificationNewBody.shape.notification
+    .partial()
+    .extend({ id: z.number() }),
+});
