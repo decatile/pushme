@@ -9,6 +9,13 @@ export type NotificationDto = {
 };
 
 export interface NotificationService {
+  /**
+   * @param userId - User's ID that owns notification
+   * @param title - Notification's title
+   * @param body - Notification's body
+   * @param schedule - Notification's schedule
+   * @returns Notification object
+   */
   newNotification(
     userId: number,
     title: string,
@@ -16,6 +23,11 @@ export interface NotificationService {
     schedule: SerializedNotificationSchedule
   ): Promise<Notification>;
 
+  /**
+   * @param notification - Notification to edit
+   * @param edit - Changed params
+   * @returns Notification object
+   */
   editNotification(
     notification: Notification,
     edit: Partial<
@@ -25,7 +37,15 @@ export interface NotificationService {
     >
   ): Promise<Notification>;
 
+  /**
+   * @param id - Notification ID
+   * @returns Notification object if present
+   */
   getById(id: number): Promise<Notification | null>;
 
+  /**
+   * @param userId - User that owns all notifications
+   * @returns Notification DTO's which ready to be sent as response
+   */
   getAll(userId: number): Promise<NotificationDto[]>;
 }

@@ -7,12 +7,15 @@ export interface RefreshTokenService {
    */
   newToken(userId: number): Promise<RefreshToken>;
 
+  /**
+   * @param tokenId - Refresh token ID to delete
+   */
   removeToken(tokenId: string): Promise<void>;
 
   /**
    * @param id - refresh token id
    * @returns New refresh token
-   * @throws {Error} if no valid refresh token with given ID
+   * @throws If no valid refresh token with given ID
    */
   findByIdAndRotate(id: string): Promise<RefreshToken>;
 }
