@@ -1,5 +1,5 @@
 import { DataSource } from "typeorm";
-import { NotificationService } from ".";
+import { intoNotificationDto, NotificationService } from ".";
 import { Notification, User } from "../../db/entities";
 import {
   fromSerializedSchedule,
@@ -37,12 +37,7 @@ export function createNotificationService(
     },
     async getAll(userId) {
       const resp = await notificationRepo.findBy({ user: { id: userId } });
-      return resp.map((x) => ({
-        id: x.id,
-        title: x.contentTitle,
-        body: x.contentBody,
-        schedule: intoSerializedSchedule(x.schedule),
-      }));
+      return resp.map(intoNotificationDto);
     },
   };
 }

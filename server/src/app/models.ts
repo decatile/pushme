@@ -26,3 +26,5 @@ export const tokenResponse = z.object({ token: z.string() });
 export const notificationDtosResponse = z.array(
   z.object({ id: z.number(), title: z.string(), body: z.string(), schedule })
 );
+
+export const sseQuerySchema = tokenResponse;

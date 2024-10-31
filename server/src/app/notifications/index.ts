@@ -1,5 +1,5 @@
 import { Notification, User } from "../../db/entities";
-import { SerializedNotificationSchedule } from "../../db/notification-schedule";
+import { intoSerializedSchedule, SerializedNotificationSchedule } from "../../db/notification-schedule";
 
 export type NotificationDto = {
   id: number;
@@ -7,6 +7,15 @@ export type NotificationDto = {
   body: string;
   schedule: SerializedNotificationSchedule;
 };
+
+export function intoNotificationDto(x: Notification): NotificationDto {
+  return {
+    id: x.id,
+    title: x.contentTitle,
+    body: x.contentBody,
+    schedule: intoSerializedSchedule(x.schedule),
+  };
+}
 
 export interface NotificationService {
   /**

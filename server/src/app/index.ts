@@ -9,6 +9,7 @@ import { Notification, RefreshToken } from "../db/entities";
 import { NotificationService } from "./notifications";
 import { buildJsonSchemas, FastifyZod, register } from "fastify-zod";
 import * as models from "./models";
+import { notificationSSE } from "./notifications/sse";
 
 declare module "fastify" {
   interface FastifyInstance {
@@ -100,7 +101,8 @@ export async function createApp(options: Options): Promise<FastifyInstance> {
       secret: options.jwtSecret,
       sign: { expiresIn: "30m" },
     })
-    .register(fastifyCors, { origin: options.origins, credentials: true });
+    .register(fastifyCors, { origin: options.origins, credentials: true })
+    .register(notificationSSE, { bufferLength: 16 });
   app.setErrorHandler((error, _, reply) => {
     if (!error.statusCode) {
       app.log.error(error);
@@ -241,7 +243,7 @@ export function appWithRoutes<Full extends boolean = false>(
       );
     }
   );
-  use("/notification/new", ({  notificationService, url }) => {
+  use("/notification/new", ({ notificationService, url }) => {
     app.zod.post(
       url,
       {
@@ -253,7 +255,16 @@ export function appWithRoutes<Full extends boolean = false>(
         const { uid } = (await request.jwtDecode()) as { uid: number };
         const { title, body, schedule } = request.body.notification;
         try {
-          await notificationService.newNotification(uid, title, body, schedule);
+          app.notificationSSE.broadcast(
+            uid,
+            "new",
+            await notificationService.newNotification(
+              uid,
+              title,
+              body,
+              schedule
+            )
+          );
         } catch (e) {
           switch (e) {
             case "invalid-schedule":
@@ -290,7 +301,11 @@ export function appWithRoutes<Full extends boolean = false>(
           };
         }
         try {
-          await notificationService.editNotification(notification, edit);
+          app.notificationSSE.broadcast(
+            uid,
+            "edit",
+            await notificationService.editNotification(notification, edit)
+          );
         } catch (e) {
           switch (e) {
             case "invalid-schedule":
