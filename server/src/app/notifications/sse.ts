@@ -1,12 +1,12 @@
-import { FastifyInstance, FastifyPluginCallback } from "fastify";
+import { FastifyInstance } from "fastify";
 import { Notification } from "../../db/entities";
 import EventEmitter from "events";
-import { intoNotificationDto, NotificationDto } from ".";
+import { intoNotificationDto, NotificationDto, NotificationService } from ".";
 import { Deque } from "deque-typed";
 
 declare module "fastify" {
   interface FastifyInstance {
-    readonly notificationSSE: NotificationSSE;
+    readonly notificationSse: NotificationSse;
   }
 }
 
@@ -23,7 +23,10 @@ class Sink extends EventEmitter<{ data: [string]; destroy: [] }> {
     this.deque.filter((x) => x[0] > lastEventId).forEach((x) => this.doSend(x));
   }
 
-  send(kind: "new" | "edit", object: NotificationDto): void {
+  send(
+    kind: "all" | "new" | "edit",
+    object: NotificationDto | NotificationDto[]
+  ): void {
     const data = [{ kind, object }, ++this.currentEventId] as [any, number];
     this.deque.push(data);
     this.doSend(data);
@@ -34,15 +37,19 @@ class Sink extends EventEmitter<{ data: [string]; destroy: [] }> {
   }
 }
 
-export class NotificationSSE {
+class NotificationSse {
   private idSinks: Record<number, Sink[]> = {};
   private tokenSinks: Record<string, Sink> = {};
 
-  constructor(fastify: FastifyInstance, public bufferLength: number) {
+  constructor(
+    fastify: FastifyInstance,
+    public bufferLength: number,
+    public notificationService: NotificationService
+  ) {
     fastify.zod.get(
       "/notification/sse",
       {
-        operationId: "notificationSSE",
+        operationId: "notificationSse",
         querystring: "sseQuerySchema",
       },
       async (request, reply) => {
@@ -54,17 +61,17 @@ export class NotificationSSE {
           connection: "keep-alive",
           "cache-control": "no-cache",
         });
-        const sink = this.getOrCreateSink(uid, request.query.token).on(
-          "data",
-          (string) => reply.raw.write(string)
-        );
+        const [sink, isNew] = this.getOrCreateSink(uid, request.query.token);
+        sink.on("data", (string) => reply.raw.write(string));
         reply.raw.once("close", () => sink.removeAllListeners("data"));
+        if (isNew) sink.send("all", await this.notificationService.getAll(uid));
       }
     );
   }
 
   private getOrCreateSink(userId: number, token: string) {
     let sink = this.tokenSinks[token];
+    let isNewSink = !sink;
     if (!sink) {
       sink = new Sink(this.bufferLength);
       sink.once("destroy", () => this.deleteSink(userId, token));
@@ -77,7 +84,7 @@ export class NotificationSSE {
       sinks.push(sink);
     }
     sink.open();
-    return sink;
+    return [sink, isNewSink] as [Sink, boolean];
   }
 
   private deleteSink(userId: number, token: string) {
@@ -91,9 +98,24 @@ export class NotificationSSE {
     }
   }
 
-  broadcast(userId: number, kind: "new" | "edit", notification: Notification) {
+  broadcast(
+    userId: number,
+    kind: "all" | "new" | "edit",
+    notification: Notification
+  ) {
     this.idSinks[userId]?.forEach((x) => {
       x.send(kind, intoNotificationDto(notification));
     });
   }
+}
+
+export function registerNotificationSse(
+  fastify: FastifyInstance,
+  bufferLength: number,
+  notificationService: NotificationService
+) {
+  fastify.decorate(
+    "notificationSse",
+    new NotificationSse(fastify, bufferLength, notificationService)
+  );
 }

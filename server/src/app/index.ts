@@ -5,11 +5,11 @@ import { UsersService } from "./users/index";
 import fastifyCookie from "@fastify/cookie";
 import fastifyCors from "@fastify/cors";
 import { RefreshTokenService } from "./refresh-token";
-import { Notification, RefreshToken } from "../db/entities";
+import { RefreshToken } from "../db/entities";
 import { NotificationService } from "./notifications";
 import { buildJsonSchemas, FastifyZod, register } from "fastify-zod";
 import * as models from "./models";
-import { NotificationSSE } from "./notifications/sse";
+import { registerNotificationSse } from "./notifications/sse";
 
 declare module "fastify" {
   interface FastifyInstance {
@@ -51,6 +51,9 @@ export type Services = Partial<{
     notificationService: NotificationService;
   };
   "/notification/all": {
+    notificationService: NotificationService;
+  };
+  "/notification/sse": {
     notificationService: NotificationService;
   };
 }>;
@@ -96,13 +99,12 @@ export async function createApp(options: Options): Promise<FastifyInstance> {
   });
   await app
     .decorate("isProduction", options.isProduction ?? false)
-    .decorate("notificationSSE", new NotificationSSE(app, 16))
     .register(fastifyCookie, { secret: options.cookieSecret })
     .register(fastifyJwt, {
       secret: options.jwtSecret,
       sign: { expiresIn: "30m" },
     })
-    .register(fastifyCors, { origin: options.origins, credentials: true })
+    .register(fastifyCors, { origin: options.origins, credentials: true });
   app.setErrorHandler((error, _, reply) => {
     if (!error.statusCode) {
       app.log.error(error);
@@ -255,7 +257,7 @@ export function appWithRoutes<Full extends boolean = false>(
         const { uid } = (await request.jwtDecode()) as { uid: number };
         const { title, body, schedule } = request.body.notification;
         try {
-          app.notificationSSE.broadcast(
+          app.notificationSse.broadcast(
             uid,
             "new",
             await notificationService.newNotification(
@@ -301,7 +303,7 @@ export function appWithRoutes<Full extends boolean = false>(
           };
         }
         try {
-          app.notificationSSE.broadcast(
+          app.notificationSse.broadcast(
             uid,
             "edit",
             await notificationService.editNotification(notification, edit)
@@ -331,5 +333,8 @@ export function appWithRoutes<Full extends boolean = false>(
         await reply.send(await notificationService.getAll(uid));
       }
     );
+  });
+  use("/notification/sse", ({ notificationService }) => {
+    registerNotificationSse(app, 16, notificationService);
   });
 }
