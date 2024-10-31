@@ -10,31 +10,26 @@ declare module "fastify" {
   }
 }
 
-class Sink extends EventEmitter {
-  deque = new Deque<[any, number]>();
+class Sink extends EventEmitter<{ data: [string]; destroy: [] }> {
+  deque: Deque<[any, number]>;
   currentEventId = 0;
 
-  constructor(public maxDequeLength: number) {
+  constructor(maxDequeLength: number) {
     super();
+    this.deque = new Deque(undefined, { maxLen: maxDequeLength });
   }
 
   open(lastEventId = 0): void {
-    this.deque
-      .filter((x) => x[0] > lastEventId)
-      .forEach((x) => this.doSend(...x));
+    this.deque.filter((x) => x[0] > lastEventId).forEach((x) => this.doSend(x));
   }
 
   send(kind: "new" | "edit", object: NotificationDto): void {
-    const eventId = ++this.currentEventId;
-    const data = { kind, object };
-    this.deque.push([data, eventId]);
-    if (this.deque.size > this.maxDequeLength) {
-      this.deque.shift();
-    }
-    this.doSend(data, eventId);
+    const data = [{ kind, object }, ++this.currentEventId] as [any, number];
+    this.deque.push(data);
+    this.doSend(data);
   }
 
-  private doSend(data: any, id: number) {
+  doSend([data, id]: [any, number]) {
     this.emit("data", `data:${JSON.stringify(data)}\nid:${id}\n\n`);
   }
 }

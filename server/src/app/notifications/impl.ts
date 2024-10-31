@@ -1,10 +1,7 @@
 import { DataSource } from "typeorm";
 import { intoNotificationDto, NotificationService } from ".";
 import { Notification, User } from "../../db/entities";
-import {
-  fromSerializedSchedule,
-  intoSerializedSchedule,
-} from "../../db/notification-schedule";
+import { fromSerializedSchedule } from "../../db/notification-schedule";
 
 export function createNotificationService(
   dataSource: DataSource
