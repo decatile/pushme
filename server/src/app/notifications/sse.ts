@@ -83,7 +83,12 @@ export class NotificationSSE {
   private deleteSink(userId: number, token: string) {
     const sink = this.tokenSinks[token];
     delete this.tokenSinks[token];
-    this.idSinks[userId] = this.idSinks[userId].filter((x) => x !== sink);
+    const sinks = this.idSinks[userId].filter((x) => x !== sink);
+    if (sinks.length > 0) {
+      this.idSinks[userId] = sinks;
+    } else {
+      delete this.idSinks[userId];
+    }
   }
 
   broadcast(userId: number, kind: "new" | "edit", notification: Notification) {
