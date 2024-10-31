@@ -54,6 +54,11 @@ export class NotificationSSE {
         const { uid } = fastify.jwt.decode(request.query.token) as {
           uid: number;
         };
+        reply.raw.writeHead(200, {
+          "content-type": "text/event-stream",
+          connection: "keep-alive",
+          "cache-control": "no-cache",
+        });
         const sink = this.getOrCreateSink(uid, request.query.token).on(
           "data",
           (string) => reply.raw.write(string)
@@ -97,13 +102,3 @@ export class NotificationSSE {
     });
   }
 }
-
-export const notificationSSE: FastifyPluginCallback<{
-  bufferLength: number;
-}> = (fastify, { bufferLength }, next) => {
-  fastify.decorate(
-    "notificationSSE",
-    new NotificationSSE(fastify, bufferLength)
-  );
-  next();
-};

@@ -41,6 +41,9 @@ export function intoSerializedSchedule(
 ): SerializedNotificationSchedule {
   switch (schedule.kind) {
     case "fixed":
-      return { kind: "fixed", when: schedule.when.map(String) };
+      return {
+        kind: "fixed",
+        when: schedule.when.map((x) => x.toJSON()),
+      };
   }
 }

@@ -23,11 +23,14 @@ export function createNotificationService(
       );
     },
     editNotification(notification, { schedule, ...edit }) {
-      return notificationRepo.save({
+      const data = {
         ...notification,
         ...edit,
-        schedule: schedule && fromSerializedSchedule(schedule),
-      });
+      };
+      if (schedule) {
+        data.schedule = fromSerializedSchedule(schedule);
+      }
+      return notificationRepo.save(data);
     },
     getById(id: number): Promise<Notification | null> {
       return notificationRepo.findOne({

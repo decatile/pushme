@@ -9,7 +9,7 @@ import { Notification, RefreshToken } from "../db/entities";
 import { NotificationService } from "./notifications";
 import { buildJsonSchemas, FastifyZod, register } from "fastify-zod";
 import * as models from "./models";
-import { notificationSSE } from "./notifications/sse";
+import { NotificationSSE } from "./notifications/sse";
 
 declare module "fastify" {
   interface FastifyInstance {
@@ -96,13 +96,13 @@ export async function createApp(options: Options): Promise<FastifyInstance> {
   });
   await app
     .decorate("isProduction", options.isProduction ?? false)
+    .decorate("notificationSSE", new NotificationSSE(app, 16))
     .register(fastifyCookie, { secret: options.cookieSecret })
     .register(fastifyJwt, {
       secret: options.jwtSecret,
       sign: { expiresIn: "30m" },
     })
     .register(fastifyCors, { origin: options.origins, credentials: true })
-    .register(notificationSSE, { bufferLength: 16 });
   app.setErrorHandler((error, _, reply) => {
     if (!error.statusCode) {
       app.log.error(error);
